@@ -1,26 +1,632 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* ── shadcn semantic color tokens ─────────────────────────────── */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ── UXRay palette tokens (available as Tailwind utilities) ──── */
+  /* Primary (Purple) */
+  --color-uxray-primary-50: var(--uxray-primary-50);
+  --color-uxray-primary-100: var(--uxray-primary-100);
+  --color-uxray-primary-200: var(--uxray-primary-200);
+  --color-uxray-primary-300: var(--uxray-primary-300);
+  --color-uxray-primary-400: var(--uxray-primary-400);
+
+  /* Secondary (Blue) */
+  --color-uxray-secondary-50: var(--uxray-secondary-50);
+  --color-uxray-secondary-100: var(--uxray-secondary-100);
+  --color-uxray-secondary-200: var(--uxray-secondary-200);
+  --color-uxray-secondary-300: var(--uxray-secondary-300);
+  --color-uxray-secondary-400: var(--uxray-secondary-400);
+
+  /* Surface (Neutrals) */
+  --color-uxray-surface-50: var(--uxray-surface-50);
+  --color-uxray-surface-100: var(--uxray-surface-100);
+  --color-uxray-surface-200: var(--uxray-surface-200);
+  --color-uxray-surface-300: var(--uxray-surface-300);
+  --color-uxray-surface-400: var(--uxray-surface-400);
+
+  /* Danger (Red) */
+  --color-uxray-danger-50: var(--uxray-danger-50);
+  --color-uxray-danger-100: var(--uxray-danger-100);
+  --color-uxray-danger-200: var(--uxray-danger-200);
+  --color-uxray-danger-300: var(--uxray-danger-300);
+  --color-uxray-danger-400: var(--uxray-danger-400);
+
+  /* Success (Green) */
+  --color-uxray-success-50: var(--uxray-success-50);
+  --color-uxray-success-100: var(--uxray-success-100);
+  --color-uxray-success-200: var(--uxray-success-200);
+  --color-uxray-success-300: var(--uxray-success-300);
+  --color-uxray-success-400: var(--uxray-success-400);
+
+  /* Warning (Orange) */
+  --color-uxray-warning-50: var(--uxray-warning-50);
+  --color-uxray-warning-100: var(--uxray-warning-100);
+  --color-uxray-warning-200: var(--uxray-warning-200);
+  --color-uxray-warning-300: var(--uxray-warning-300);
+  --color-uxray-warning-400: var(--uxray-warning-400);
+
+  /* ── Font tokens ──────────────────────────────────────────────── */
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+
+  /* ── Radius tokens ────────────────────────────────────────────── */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ═══════════════════════════════════════════════════════════════════
+   LIGHT MODE (Kept sleek but mostly relying on dark mode for future vibe)
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
+  --card: #ffffff;
+  --card-foreground: #1d1d1f;
+  --popover: #ffffff;
+  --popover-foreground: #1d1d1f;
+  --primary: #5B00D6;
+  --primary-foreground: #FFFFFF;
+  --secondary: #0071e3;
+  --secondary-foreground: #FFFFFF;
+  --muted: #e8e8ed;
+  --muted-foreground: #6e6e73;
+  --accent: rgba(91, 0, 214, 0.06);
+  --accent-foreground: #5B00D6;
+  --success: #c7f7ec;
+  --success-foreground: #008060;
+  --destructive: #FF3B30;
+  --border: #d2d2d7;
+  --input: #e5e5ea;
+  --ring: #5B00D6;
+
+  /* Chart colors */
+  --chart-1: #7000FF;
+  --chart-2: #00E5FF;
+  --chart-3: #00FFAA;
+  --chart-4: #FF0055;
+  --chart-5: #FFD500;
+
+  /* Radius (Standardized to macOS 27 Golden Gate uniform 12px radius) */
+  --radius: 0.75rem;
+
+  /* Sidebar */
+  --sidebar: #F8F9FA;
+  --sidebar-foreground: #020205;
+  --sidebar-primary: #7000FF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(112, 0, 255, 0.08);
+  --sidebar-accent-foreground: #7000FF;
+  --sidebar-border: #E4E7EC;
+  --sidebar-ring: #7000FF;
+
+  /* ── Raw UXRay palette CSS variables (Light Mode: WCAG AA compliant text-safe colors) ──── */
+  /* Primary (Deep Violet) */
+  --uxray-primary-50: #F3E8FF;
+  --uxray-primary-100: #E0C2FF;
+  --uxray-primary-200: #B870FF;
+  --uxray-primary-300: #7000FF; /* Darker violet for text contrast (6.6:1) */
+  --uxray-primary-400: #7000FF;
+
+  /* Secondary (Teal/Cyan) */
+  --uxray-secondary-50: #E0FFFF;
+  --uxray-secondary-100: #B3FFFF;
+  --uxray-secondary-200: #66FFFF;
+  --uxray-secondary-300: #006F80; /* Deep teal for link/text contrast (5.1:1) */
+  --uxray-secondary-400: #005966;
+
+  /* Surface (Deep Black/Gray) */
+  --uxray-surface-50: #FFFFFF;
+  --uxray-surface-100: #F8F9FA;
+  --uxray-surface-200: #525E75; /* Compliant muted grey-blue (5.5:1) */
+  --uxray-surface-300: #344054;
+  --uxray-surface-400: #020205;
+
+  /* Danger (Deep Pink/Red) */
+  --uxray-danger-50: #FFE5EE;
+  --uxray-danger-100: #FFB3CC;
+  --uxray-danger-200: #FF6699;
+  --uxray-danger-300: #C90041; /* Rich red for indicator contrast (5.2:1) */
+  --uxray-danger-400: #A30034;
+
+  /* Success (Emerald) */
+  --uxray-success-50: #EBFDF9;
+  --uxray-success-100: #C7F7EC;
+  --uxray-success-200: #85ECCF;
+  --uxray-success-300: #008060; /* Deep emerald green for status contrast (5.0:1) */
+  --uxray-success-400: #00664B;
+
+  /* Warning (Deep Amber) */
+  --uxray-warning-50: #FFFBE5;
+  --uxray-warning-100: #FFF4B3;
+  --uxray-warning-200: #FFE466;
+  --uxray-warning-300: #A15C00; /* Rich dark amber for warning text contrast (5.2:1) */
+  --uxray-warning-400: #804900;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DARK MODE (The primary futuristic aesthetic)
+   ═══════════════════════════════════════════════════════════════════ */
+.dark {
+  --background: #000000;
+  --foreground: #f5f5f7;
+  --card: #1c1c1e;
+  --card-foreground: #f5f5f7;
+  --popover: #2c2c2e;
+  --popover-foreground: #f5f5f7;
+  --primary: #9F66FF;
+  --primary-foreground: #FFFFFF;
+  --secondary: #0a84ff;
+  --secondary-foreground: #FFFFFF;
+  --muted: #2c2c2e;
+  --muted-foreground: #86868b;
+  --accent: rgba(159, 102, 255, 0.06);
+  --accent-foreground: #9F66FF;
+  --success: #80FFD0;
+  --success-foreground: #005a3e;
+  --destructive: #FF453A;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #9F66FF;
+
+  /* Chart colors */
+  --chart-1: #8F1AFF;
+  --chart-2: #00E5FF;
+  --chart-3: #00FFAA;
+  --chart-4: #FFD500;
+  --chart-5: #FF3B30;
+
+  /* Sidebar */
+  --sidebar: #121212;
+  --sidebar-foreground: #F5F5F7;
+  --sidebar-primary: #8F1AFF;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(255, 255, 255, 0.06);
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #8F1AFF;
+
+  /* Success (Green) - Dark Mode neon glow */
+  --uxray-success-50: rgba(0, 255, 170, 0.04);
+  --uxray-success-100: #80FFD0;
+  --uxray-success-200: #33FFAA;
+  --uxray-success-300: #00FFAA;
+  --uxray-success-400: #00D682;
+
+  /* ── Dark Mode overrides (Reverting to high-contrast neon/glowing aesthetic on dark background) ── */
+  /* Primary (Neon Violet) */
+  --uxray-primary-50: rgba(143, 26, 255, 0.05);
+  --uxray-primary-100: #E0C2FF;
+  --uxray-primary-200: #B870FF;
+  --uxray-primary-300: #8F1AFF;
+  --uxray-primary-400: #7000FF;
+
+  /* Secondary (Neon Cyan) */
+  --uxray-secondary-50: rgba(0, 229, 255, 0.05);
+  --uxray-secondary-100: #B3FFFF;
+  --uxray-secondary-200: #66FFFF;
+  --uxray-secondary-300: #00E5FF;
+  --uxray-secondary-400: #00B3CC;
+
+  /* Surface (Dark Neutrals) */
+  --uxray-surface-50: #161617;
+  --uxray-surface-100: #1E1E20;
+  --uxray-surface-200: #A1A1AA;
+  --uxray-surface-300: #E4E7EC;
+  --uxray-surface-400: #F5F5F7;
+
+  /* Danger (Neon Pink) */
+  --uxray-danger-50: rgba(255, 0, 85, 0.05);
+  --uxray-danger-100: #FFB3CC;
+  --uxray-danger-200: #FF6699;
+  --uxray-danger-300: #FF0055;
+  --uxray-danger-400: #CC0044;
+
+  /* Warning (Neon Yellow) */
+  --uxray-warning-50: rgba(255, 213, 0, 0.05);
+  --uxray-warning-100: #FFF4B3;
+  --uxray-warning-200: #FFE466;
+  --uxray-warning-300: #FFD500;
+  --uxray-warning-400: #CCA600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BASE LAYER
+   ═══════════════════════════════════════════════════════════════════ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  .dark body {
+    background-image: radial-gradient(circle at top center, rgba(159, 102, 255, 0.08) 0%, transparent 60%);
+    background-size: 100vw 100vh;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-color: #000000;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Custom selection colors */
+  ::selection {
+    background-color: #5B00D6;
+    color: #FFFFFF;
+  }
+
+  .dark ::selection {
+    background-color: rgba(159, 102, 255, 0.25);
+    color: #FFFFFF;
+  }
+
+  /* Subtle thin scrollbars with cyan glow */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #E8ECF1 transparent;
+  }
+
+  .dark * {
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #E8ECF1;
+    border-radius: 9999px;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #D1D5DB;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+  }
+
+  /* Focus-visible ring style - Neon Glow */
+  :focus-visible {
+    outline: 2px solid #8F1AFF;
+    outline-offset: 2px;
+    box-shadow: 0 0 12px rgba(143, 26, 255, 0.45);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ═══════════════════════════════════════════════════════════════════
+   PREMIUM UXRAY DESIGN ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* macOS 27 "Liquid Glass" Panel Style */
+.glass-panel {
+  background-color: rgba(255, 255, 255, 0.5);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(28px) saturate(210%);
+  -webkit-backdrop-filter: blur(28px) saturate(210%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.35), 0 4px 24px rgba(0, 0, 0, 0.02);
+}
+
+.dark .glass-panel {
+  background-color: rgba(20, 20, 22, 0.45);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 12px 36px rgba(0, 0, 0, 0.35);
+}
+
+/* macOS 27 Liquid Glass Control Transparency Presets */
+.liquid-glass-clear {
+  background-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(32px) saturate(220%);
+  -webkit-backdrop-filter: blur(32px) saturate(220%);
+  border: 0.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+}
+.dark .liquid-glass-clear {
+  background-color: rgba(20, 20, 22, 0.3);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 0.5px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+.liquid-glass-medium {
+  background-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+}
+.dark .liquid-glass-medium {
+  background-color: rgba(20, 20, 22, 0.5);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.liquid-glass-opaque {
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+}
+.dark .liquid-glass-opaque {
+  background-color: rgba(28, 28, 30, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Glass Card Hover lift & scale */
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  transform: scale(1.008);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.03), 0 0 1px rgba(0, 0, 0, 0.1);
+  border-color: rgba(91, 0, 214, 0.15);
+}
+
+.dark .glass-card-hover:hover {
+  transform: scale(1.008);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.1);
+  border-color: rgba(159, 102, 255, 0.2);
+  background-color: rgba(28, 28, 30, 0.7);
+}
+
+/* Animated Border Glow */
+@keyframes borderGlowPulse {
+  0%, 100% { border-color: rgba(112, 0, 255, 0.12); }
+  50% { border-color: rgba(0, 229, 255, 0.25); }
+}
+
+.glowing-border-pulse {
+  animation: borderGlowPulse 5s infinite ease-in-out;
+}
+
+/* Text Colors (Replaced gradients with solid premium theme colors) */
+.text-gradient-cyan-purple {
+  color: var(--primary);
+}
+
+.text-gradient-gold-amber {
+  color: var(--uxray-warning-300);
+}
+
+/* Accent Card Glows (top gradient accent light refraction highlights) */
+.card-glow-cyan {
+  position: relative;
+}
+.card-glow-cyan::before {
+  content: '';
+  position: absolute;
+  top: -0.5px;
+  left: 12px;
+  right: 12px;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--uxray-secondary-300) 20%, var(--uxray-secondary-300) 80%, transparent);
+  opacity: 0.8;
+  z-index: 5;
+}
+
+.card-glow-success {
+  position: relative;
+}
+.card-glow-success::before {
+  content: '';
+  position: absolute;
+  top: -0.5px;
+  left: 12px;
+  right: 12px;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--uxray-success-300) 20%, var(--uxray-success-300) 80%, transparent);
+  opacity: 0.8;
+  z-index: 5;
+}
+
+.card-glow-purple {
+  position: relative;
+}
+.card-glow-purple::before {
+  content: '';
+  position: absolute;
+  top: -0.5px;
+  left: 12px;
+  right: 12px;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--primary) 20%, var(--primary) 80%, transparent);
+  opacity: 0.8;
+  z-index: 5;
+}
+
+.card-glow-warning {
+  position: relative;
+}
+.card-glow-warning::before {
+  content: '';
+  position: absolute;
+  top: -0.5px;
+  left: 12px;
+  right: 12px;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--uxray-warning-300) 20%, var(--uxray-warning-300) 80%, transparent);
+  opacity: 0.8;
+  z-index: 5;
+}
+
+.card-glow-danger {
+  position: relative;
+}
+.card-glow-danger::before {
+  content: '';
+  position: absolute;
+  top: -0.5px;
+  left: 12px;
+  right: 12px;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--uxray-danger-300) 20%, var(--uxray-danger-300) 80%, transparent);
+  opacity: 0.8;
+  z-index: 5;
+}
+
+/* Sector tag gradient classes */
+.tag-saas {
+  background: linear-gradient(135deg, rgba(91, 0, 214, 0.08), rgba(91, 0, 214, 0.02));
+  color: var(--primary);
+  border: 1px solid rgba(91, 0, 214, 0.15);
+}
+.tag-ecommerce {
+  background: linear-gradient(135deg, rgba(0, 113, 227, 0.08), rgba(0, 113, 227, 0.02));
+  color: var(--secondary);
+  border: 1px solid rgba(0, 113, 227, 0.15);
+}
+.tag-mobile {
+  background: linear-gradient(135deg, rgba(0, 128, 96, 0.08), rgba(0, 128, 96, 0.02));
+  color: var(--uxray-success-400);
+  border: 1px solid rgba(0, 128, 96, 0.15);
+}
+.tag-dashboard {
+  background: linear-gradient(135deg, rgba(161, 92, 0, 0.08), rgba(161, 92, 0, 0.02));
+  color: var(--uxray-warning-400);
+  border: 1px solid rgba(161, 92, 0, 0.15);
+}
+.tag-other {
+  background: linear-gradient(135deg, rgba(110, 110, 115, 0.08), rgba(110, 110, 115, 0.02));
+  color: var(--muted-foreground);
+  border: 1px solid rgba(110, 110, 115, 0.15);
+}
+
+.dark .tag-saas {
+  background: linear-gradient(135deg, rgba(143, 26, 255, 0.15), rgba(143, 26, 255, 0.05));
+  color: var(--primary);
+  border: 1px solid rgba(143, 26, 255, 0.2);
+}
+.dark .tag-ecommerce {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(0, 229, 255, 0.05));
+  color: var(--secondary);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+}
+.dark .tag-mobile {
+  background: linear-gradient(135deg, rgba(0, 255, 170, 0.15), rgba(0, 255, 170, 0.05));
+  color: var(--uxray-success-300);
+  border: 1px solid rgba(0, 255, 170, 0.2);
+}
+.dark .tag-dashboard {
+  background: linear-gradient(135deg, rgba(255, 213, 0, 0.15), rgba(255, 213, 0, 0.05));
+  color: var(--uxray-warning-300);
+  border: 1px solid rgba(255, 213, 0, 0.2);
+}
+.dark .tag-other {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+  color: var(--muted-foreground);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Base Gradient Background Utility Classes */
+@layer utilities {
+  .bg-gradient-primary {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--primary) 70%, white 30%) 0%, color-mix(in srgb, var(--primary) 40%, white 60%) 100%);
+  }
+  
+  .dark .bg-gradient-primary {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--primary) 60%, transparent) 0%, color-mix(in srgb, var(--primary) 20%, transparent) 100%);
+  }
+
+  .bg-gradient-secondary {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxray-secondary-300) 70%, white 30%) 0%, color-mix(in srgb, var(--uxray-secondary-300) 40%, white 60%) 100%);
+  }
+
+  .dark .bg-gradient-secondary {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxray-secondary-300) 60%, transparent) 0%, color-mix(in srgb, var(--uxray-secondary-300) 20%, transparent) 100%);
+  }
+
+  .bg-gradient-success {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxray-success-300) 70%, white 30%) 0%, color-mix(in srgb, var(--uxray-success-300) 40%, white 60%) 100%);
+  }
+
+  .dark .bg-gradient-success {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxray-success-300) 60%, transparent) 0%, color-mix(in srgb, var(--uxray-success-300) 20%, transparent) 100%);
+  }
+
+  .bg-gradient-warning {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxray-warning-300) 70%, white 30%) 0%, color-mix(in srgb, var(--uxray-warning-300) 40%, white 60%) 100%);
+  }
+
+  .dark .bg-gradient-warning {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxray-warning-300) 60%, transparent) 0%, color-mix(in srgb, var(--uxray-warning-300) 20%, transparent) 100%);
+  }
+
+  .bg-gradient-danger {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxray-danger-300) 70%, white 30%) 0%, color-mix(in srgb, var(--uxray-danger-300) 40%, white 60%) 100%);
+  }
+
+  .dark .bg-gradient-danger {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxray-danger-300) 60%, transparent) 0%, color-mix(in srgb, var(--uxray-danger-300) 20%, transparent) 100%);
+  }
 }
