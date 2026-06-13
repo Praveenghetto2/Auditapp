@@ -53,7 +53,18 @@ export function HeatmapOverlay({ zones, enabled, opacity = 0.45, onZoneClick, cl
       const x = (zone.x / 100) * canvas.width
       const y = (zone.y / 100) * canvas.height
       const radius = 60 + zone.intensity * 40
-      const color = SEVERITY_COLORS[zone.severity]
+      
+      let color = SEVERITY_COLORS[zone.severity]
+      const labelLower = zone.label.toLowerCase()
+      if (labelLower.includes('frustration')) {
+        color = { r: 239, g: 68, b: 68 } // red-500
+      } else if (labelLower.includes('confusion')) {
+        color = { r: 168, g: 85, b: 247 } // purple-500
+      } else if (labelLower.includes('delight')) {
+        color = { r: 16, g: 185, b: 129 } // emerald-500
+      } else if (labelLower.includes('cognitive')) {
+        color = { r: 245, g: 158, b: 11 } // amber-500
+      }
 
       const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
       gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${0.6 * zone.intensity})`)
@@ -82,22 +93,47 @@ export function HeatmapOverlay({ zones, enabled, opacity = 0.45, onZoneClick, cl
               style={{ opacity }}
             />
             {/* Clickable zone markers */}
-            {zones.map((zone) => (
-              <button
-                key={zone.issueId}
-                onClick={() => onZoneClick?.(zone.issueId)}
-                className={cn(
-                  "absolute size-6 rounded-full border-2 flex items-center justify-center text-xs font-bold pointer-events-auto cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-125 shadow-lg",
+            {zones.map((zone) => {
+              let btnColorClass = ''
+              let symbol = '·'
+              const labelLower = zone.label.toLowerCase()
+
+              if (labelLower.includes('frustration')) {
+                btnColorClass = "bg-red-500/80 border-red-300 text-white"
+                symbol = '😠'
+              } else if (labelLower.includes('confusion')) {
+                btnColorClass = "bg-purple-500/80 border-purple-300 text-white"
+                symbol = '😕'
+              } else if (labelLower.includes('delight')) {
+                btnColorClass = "bg-emerald-500/80 border-emerald-300 text-white"
+                symbol = '😊'
+              } else if (labelLower.includes('cognitive')) {
+                btnColorClass = "bg-amber-500/80 border-amber-300 text-white"
+                symbol = '🧠'
+              } else {
+                btnColorClass = cn(
                   zone.severity === 'critical' && "bg-red-500/80 border-red-300 text-white",
                   zone.severity === 'serious' && "bg-amber-500/80 border-amber-300 text-white",
                   zone.severity === 'minor' && "bg-blue-500/80 border-blue-300 text-white",
-                )}
-                style={{ left: `${zone.x}%`, top: `${zone.y}%` }}
-                title={zone.label}
-              >
-                {zone.severity === 'critical' ? '!' : zone.severity === 'serious' ? '⚠' : '·'}
-              </button>
-            ))}
+                )
+                symbol = zone.severity === 'critical' ? '!' : zone.severity === 'serious' ? '⚠' : '·'
+              }
+
+              return (
+                <button
+                  key={zone.issueId}
+                  onClick={() => onZoneClick?.(zone.issueId)}
+                  className={cn(
+                    "absolute size-6 rounded-full border-2 flex items-center justify-center text-xs font-bold pointer-events-auto cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-125 shadow-lg",
+                    btnColorClass
+                  )}
+                  style={{ left: `${zone.x}%`, top: `${zone.y}%` }}
+                  title={zone.label}
+                >
+                  {symbol}
+                </button>
+              )
+            })}
           </motion.div>
         )}
       </AnimatePresence>

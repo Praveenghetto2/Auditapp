@@ -10,7 +10,7 @@ import {
   Target, Zap, MousePointerClick, BookOpen, Heart, Lightbulb, Users, Layers,
   Megaphone, CheckCircle2, XCircle, MinusCircle, Circle, Hash, Shapes,
   Search, Home, Settings, User, Bell, Mail, Star, Trash2, Edit, Share2, Download, Loader2, UploadCloud,
-  ExternalLink, Flame, Wand2, Send, Info, Cpu, Activity
+  ExternalLink, Flame, Wand2, Send, Info, Cpu, Activity, Monitor, Tablet, Smartphone, Ruler, Smile
 } from 'lucide-react'
 import { ExportDialog } from '@/components/uxray/ExportDialog'
 import { HeatmapOverlay, DEFAULT_HEAT_ZONES } from '@/components/uxray/HeatmapOverlay'
@@ -41,7 +41,7 @@ import {
 // TYPES & MOCK DATA
 // ═══════════════════════════════════════════════════════════════════════
 
-type TabId = 'overview' | 'issues' | 'ai-suggestions' | 'copy' | 'typography' | 'accessibility' | 'spacing' | 'coach' | 'automated-scan'
+type TabId = 'overview' | 'issues' | 'ai-suggestions' | 'copy' | 'typography' | 'accessibility' | 'spacing' | 'coach' | 'automated-scan' | 'token-linter'
 
 interface TabDef {
   id: TabId
@@ -59,6 +59,7 @@ const TABS: TabDef[] = [
   { id: 'spacing', label: 'Spacing & Layout', icon: <Grid3X3 className="size-3.5" /> },
   { id: 'coach', label: 'AI Coach', icon: <Brain className="size-3.5" /> },
   { id: 'automated-scan', label: 'Automated Scan', icon: <Cpu className="size-3.5" /> },
+  { id: 'token-linter', label: 'Token Linter', icon: <Ruler className="size-3.5" /> },
 ]
 
 // Radar chart dimensions data
@@ -1148,6 +1149,8 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
   const teamStore = useTeamStore()
   const [commentText, setCommentText] = React.useState('')
   const [heatmapEnabled, setHeatmapEnabled] = React.useState(false)
+  const [sentimentEnabled, setSentimentEnabled] = React.useState(false)
+  const [viewport, setViewport] = React.useState<'desktop' | 'tablet' | 'mobile'>('desktop')
 
   const [viewMode, setViewMode] = React.useState<'list' | 'visual'>('visual')
   const [inspectorMode, setInspectorMode] = React.useState<'audited' | 'fixed'>('audited')
@@ -1275,23 +1278,6 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* Heatmap Toggle */}
-                  {inspectorMode === 'audited' && (
-                    <button
-                      type="button"
-                      onClick={() => setHeatmapEnabled(!heatmapEnabled)}
-                      className={cn(
-                        'h-8 px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer',
-                        heatmapEnabled
-                          ? 'bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/20'
-                          : 'border-border/40 hover:bg-muted/30 text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <Flame className="size-3.5" />
-                      Heatmap
-                    </button>
-                  )}
-
                   {/* Audited UI vs Proposed Solution Toggle */}
                   <div className="flex rounded-xl p-1 bg-card/60 border border-border/40 glass-panel text-xs font-semibold text-muted-foreground select-none max-w-[220px]">
                     <button
@@ -1322,8 +1308,74 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
                 </div>
               </CardHeader>
               
-              <CardContent className="pb-5 pt-2 flex items-center justify-center">
-                <div className="relative w-full aspect-square md:aspect-video rounded-lg overflow-hidden border border-white/[0.04] bg-[#0c0c12]">
+              <CardContent className="pb-5 pt-2 flex flex-col items-center gap-4">
+                {/* Viewport & Overlay Controls Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-4 w-full border-b border-border/20 pb-3">
+                  {/* Viewport Selectors */}
+                  <div className="flex rounded-xl p-0.5 bg-card/60 border border-border/40 glass-panel text-[11px] font-semibold text-muted-foreground select-none">
+                    {[
+                      { id: 'desktop', label: 'Desktop', icon: <Monitor className="size-3" /> },
+                      { id: 'tablet', label: 'Tablet', icon: <Tablet className="size-3" /> },
+                      { id: 'mobile', label: 'Mobile', icon: <Smartphone className="size-3" /> }
+                    ].map((dev) => (
+                      <button
+                        key={dev.id}
+                        onClick={() => setViewport(dev.id as any)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-lg flex items-center gap-1.5 cursor-pointer transition-all",
+                          viewport === dev.id
+                            ? "bg-primary text-primary-foreground font-bold shadow-md shadow-primary/25"
+                            : "hover:text-foreground"
+                        )}
+                      >
+                        {dev.icon}
+                        {dev.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Heatmap & Sentiment Toggle buttons */}
+                  <div className="flex items-center gap-2">
+                    {inspectorMode === 'audited' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => { setHeatmapEnabled(!heatmapEnabled); setSentimentEnabled(false); }}
+                          className={cn(
+                            'h-7.5 px-2.5 rounded-lg border text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer',
+                            heatmapEnabled
+                              ? 'bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/20 font-bold'
+                              : 'border-border/40 hover:bg-muted/30 text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          <Flame className="size-3" />
+                          Heatmap
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setSentimentEnabled(!sentimentEnabled); setHeatmapEnabled(false); }}
+                          className={cn(
+                            'h-7.5 px-2.5 rounded-lg border text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer',
+                            sentimentEnabled
+                              ? 'bg-primary/15 border-primary/30 text-primary-300 hover:bg-primary/20 font-bold'
+                              : 'border-border/40 hover:bg-muted/30 text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          <Smile className="size-3" />
+                          Sentiment Map
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div 
+                  className={cn(
+                    "relative w-full aspect-square md:aspect-video rounded-lg overflow-hidden border border-white/[0.04] bg-[#0c0c12] transition-all duration-500 ease-in-out mx-auto",
+                    viewport === 'tablet' ? 'max-w-[580px] aspect-square' :
+                    viewport === 'mobile' ? 'max-w-[340px] aspect-[9/16]' : 'w-full'
+                  )}
+                >
                   {/* Screenshot Image (Conditional swap based on toggle state) */}
                   <img
                     src={inspectorMode === 'audited' ? "/screenshots/dashboard_audit_screenshot.png" : "/screenshots/dashboard_audit_solution.png"}
@@ -1333,8 +1385,13 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
 
                   {/* Heatmap Overlay */}
                   <HeatmapOverlay
-                    enabled={heatmapEnabled && inspectorMode === 'audited'}
-                    zones={MOCK_ISSUES.map(issue => {
+                    enabled={(heatmapEnabled || sentimentEnabled) && inspectorMode === 'audited'}
+                    zones={sentimentEnabled ? [
+                      { x: 85.5, y: 13.5, intensity: 0.9, severity: 'critical', issueId: 's-1', label: 'Frustration: Profile Settings' },
+                      { x: 69.0, y: 13.5, intensity: 0.85, severity: 'critical', issueId: 's-2', label: 'Frustration: Accessible Input' },
+                      { x: 57.5, y: 31.0, intensity: 0.7, severity: 'serious', issueId: 's-3', label: 'Confusion: Grid Gaps' },
+                      { x: 12.5, y: 18.5, intensity: 0.6, severity: 'minor', issueId: 's-4', label: 'Cognitive Load: Navigation' }
+                    ] : MOCK_ISSUES.map(issue => {
                       const coords = ISSUE_COORDINATES[issue.id] || { x: 50, y: 50 }
                       const intensityMap = { critical: 1, serious: 0.7, minor: 0.4 }
                       return {
@@ -1350,7 +1407,7 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
                   />
 
                   {/* Hotspots Overlay */}
-                  {!heatmapEnabled && MOCK_ISSUES.map((issue, index) => {
+                  {!heatmapEnabled && !sentimentEnabled && MOCK_ISSUES.map((issue, index) => {
                     const coords = ISSUE_COORDINATES[issue.id]
                     if (!coords) return null
 
@@ -1409,6 +1466,48 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
                     )
                   })}
                 </div>
+
+                {/* Gaze Focus & Sentiment Legend */}
+                {(heatmapEnabled || sentimentEnabled) && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 5 }} 
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full flex items-center justify-between gap-4 p-3 mt-1 rounded-xl bg-card/40 border border-border/20 text-xs text-muted-foreground select-none glass-panel"
+                  >
+                    {heatmapEnabled ? (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
+                        <span className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Gaze Fixation Intensity:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px]">Low</span>
+                          <div className="h-2 w-32 rounded-full bg-gradient-to-r from-blue-500 via-amber-500 to-red-500" />
+                          <span className="text-[10px]">High (Fixation)</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
+                        <span className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">User Sentiment:</span>
+                        <div className="flex flex-wrap items-center gap-4">
+                          <span className="flex items-center gap-1.5 text-[10px] font-bold text-red-400">
+                            <span className="size-2 rounded-full bg-red-500 animate-pulse" />
+                            😠 Frustration
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[10px] font-bold text-purple-300">
+                            <span className="size-2 rounded-full bg-purple-500 animate-pulse" />
+                            😕 Confusion
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400">
+                            <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+                            🧠 Cognitive Load
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400">
+                            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                            😊 Delight
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -2172,6 +2271,131 @@ function AutomatedScanTab() {
   )
 }
 
+/** Tab: Design System Token Linter */
+function TokenLinterTab() {
+  const [applied, setApplied] = React.useState<Record<string, boolean>>({})
+
+  const violations = [
+    {
+      id: "tl-1",
+      file: "components/DashboardGrid.module.css",
+      selector: ".grid-container",
+      property: "margin-bottom",
+      hardcoded: "19px",
+      token: "var(--space-5) /* 20px */",
+      description: "Non-standard margin spacing. The project design system enforces an 8px (4px subdivision) spatial grid."
+    },
+    {
+      id: "tl-2",
+      file: "styles/buttons.css",
+      selector: "button.cta-primary",
+      property: "background-color",
+      hardcoded: "#7D12FF",
+      token: "var(--color-primary-300) /* #8B5CF6 */",
+      description: "Ad-hoc color hex value. Color tokens must be used to ensure dark mode flexibility and brand coherence."
+    },
+    {
+      id: "tl-3",
+      file: "components/Header.tsx",
+      selector: "span.profile-title",
+      property: "font-size",
+      hardcoded: "15px",
+      token: "var(--text-sm) /* 14px */",
+      description: "Non-token typography size. Ensure all text matches design system scale to retain visual hierarchy guidelines."
+    },
+    {
+      id: "tl-4",
+      file: "components/WidgetCard.css",
+      selector: ".widget-card-container",
+      property: "border-radius",
+      hardcoded: "9px",
+      token: "var(--radius-md) /* 8px */",
+      description: "Arbitrary corner radius. Radii must conform with structural token guidelines (4px, 8px, 12px)."
+    }
+  ]
+
+  const handleApplyToken = (id: string) => {
+    setApplied(prev => ({ ...prev, [id]: !prev[id] }))
+    toast.success(applied[id] ? "Token fallback reverted" : "Linter fixed! CSS replaced with design token variable.")
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl glass-panel border border-border/40">
+        <div>
+          <h3 className="text-base font-bold flex items-center gap-2 text-foreground">
+            <Ruler className="size-4 text-uxray-primary-300" />
+            Design System Token Linter
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Identify hardcoded values in stylesheets and map them to standard design tokens
+          </p>
+        </div>
+        <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 font-bold uppercase tracking-wider text-xs py-1 px-2.5 animate-shimmer">
+          Scan Active
+        </Badge>
+      </div>
+
+      <div className="space-y-4">
+        {violations.map((v) => {
+          const isApplied = applied[v.id]
+          return (
+            <Card key={v.id} className={cn(
+              "glass-panel shadow-sm border transition-all duration-300",
+              isApplied ? 'border-emerald-500/20 bg-emerald-500/5 card-glow-success' : 'border-border/40'
+            )}>
+              <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap text-[10px] font-mono text-muted-foreground">
+                    <span className="bg-muted/30 px-2 py-0.5 rounded border border-border/20 truncate max-w-[200px]">{v.file}</span>
+                    <span className="text-uxray-secondary-300 font-bold">{v.selector}</span>
+                  </div>
+                  <h4 className="text-xs font-bold text-foreground">
+                    Hardcoded <code className="text-red-400 font-bold">{v.property}</code> detected
+                  </h4>
+                  <p className="text-xs text-muted-foreground font-normal leading-relaxed">{v.description}</p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-fit">
+                  <div className="grid grid-cols-2 gap-2 border border-border/30 rounded-xl p-2 bg-black/20 text-[10px] font-mono text-center">
+                    <div className="px-2 py-1 bg-red-500/10 text-red-400 rounded border border-red-500/15">
+                      <span className="text-[8px] uppercase tracking-wider text-red-400 block font-sans font-bold">Hardcoded</span>
+                      {v.hardcoded}
+                    </div>
+                    <div className={cn(
+                      "px-2 py-1 rounded border transition-all",
+                      isApplied 
+                        ? "bg-emerald-500/25 text-emerald-300 border-emerald-500/30 font-bold" 
+                        : "bg-emerald-500/10 text-emerald-400 border-emerald-500/15"
+                    )}>
+                      <span className="text-[8px] uppercase tracking-wider text-emerald-400 block font-sans font-bold">Token Variable</span>
+                      {isApplied ? v.token.split(" /*")[0] : v.token}
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={() => handleApplyToken(v.id)}
+                    className={cn(
+                      "h-9 text-xs font-semibold gap-1.5 shrink-0 cursor-pointer shadow-md transition-all",
+                      isApplied 
+                        ? "bg-emerald-500 text-white hover:bg-emerald-600" 
+                        : "bg-primary text-primary-foreground hover:opacity-90"
+                    )}
+                  >
+                    {isApplied ? <CheckCircle2 className="size-3.5" /> : <Sparkles className="size-3.5" />}
+                    {isApplied ? 'Token Applied' : 'Apply Token'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+    </motion.div>
+  )
+}
+
 /** Tab 4: Typography & Icons */
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string; fill?: string }>> = {
   Search,
@@ -2339,6 +2563,10 @@ function TypographyTab() {
 
 /** Tab 5: Accessibility (enhanced) */
 function AccessibilityTab({ scores }: { scores: { accessibility: number } }) {
+  const [fgBrightness, setFgBrightness] = React.useState(95)
+  const [bgBrightness, setBgBrightness] = React.useState(12)
+  const contrastRatio = Math.round((Math.max(fgBrightness, bgBrightness) + 5) / (Math.min(fgBrightness, bgBrightness) + 5) * 10) / 10
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-3">
@@ -2392,6 +2620,108 @@ function AccessibilityTab({ scores }: { scores: { accessibility: number } }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Interactive Contrast Tester Widget */}
+      <Card className="glass-panel border-border/40 card-glow-purple overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Palette className="size-4 text-uxray-secondary-300" />
+            Theme-Aware Contrast Compliance Tester
+          </CardTitle>
+          <CardDescription>
+            Experiment with background and foreground colors to verify compliance under WCAG 2.2 AA (4.5:1) and AAA (7:1) guidelines.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Control Sliders */}
+            <div className="space-y-4 bg-muted/10 p-4 rounded-xl border border-border/20">
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  <span>Foreground (Text Brightness)</span>
+                  <span>{fgBrightness}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={fgBrightness}
+                  onChange={(e) => setFgBrightness(Number(e.target.value))}
+                  className="w-full h-1.5 rounded-full appearance-none bg-muted accent-primary cursor-pointer animate-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  <span>Background (Container Brightness)</span>
+                  <span>{bgBrightness}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={bgBrightness}
+                  onChange={(e) => setBgBrightness(Number(e.target.value))}
+                  className="w-full h-1.5 rounded-full appearance-none bg-muted accent-primary cursor-pointer animate-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1.5 border-t border-border/10">
+                <span className="font-semibold text-muted-foreground uppercase tracking-wider">Simulated Theme</span>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setFgBrightness(10); setBgBrightness(95); }}
+                    className="h-7 text-[10px] px-2.5 font-bold cursor-pointer"
+                  >
+                    Light Theme
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setFgBrightness(95); setBgBrightness(12); }}
+                    className="h-7 text-[10px] px-2.5 font-bold cursor-pointer"
+                  >
+                    Dark Theme
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Compliance Preview swatch */}
+            <div className="flex flex-col justify-between p-4 rounded-xl border border-white/[0.04] relative overflow-hidden h-36 md:h-auto min-h-32 shadow-inner transition-colors duration-300" style={{ backgroundColor: `hsl(240, 6%, ${bgBrightness}%)` }}>
+              <div className="absolute top-2 right-4 text-[9px] uppercase font-bold tracking-widest" style={{ color: `hsl(240, 6%, ${fgBrightness}%)` }}>Preview</div>
+              
+              <div className="my-auto text-center space-y-1">
+                <p className="text-lg font-black transition-colors" style={{ color: `hsl(240, 6%, ${fgBrightness}%)` }}>Sample AA / AAA Text</p>
+                <p className="text-xs transition-colors font-semibold" style={{ color: `hsl(240, 6%, ${fgBrightness}%)` }}>Contrast Ratio: {contrastRatio}:1</p>
+              </div>
+
+              <div className="flex gap-2 justify-center">
+                <Badge variant="outline" className={cn(
+                  "text-[9px] font-bold uppercase tracking-wider border-0 shadow-none shrink-0",
+                  contrastRatio >= 4.5 
+                    ? "bg-emerald-500/15 text-emerald-400" 
+                    : "bg-red-500/15 text-red-400"
+                )}>
+                  AA: {contrastRatio >= 4.5 ? 'Pass' : 'Fail'}
+                </Badge>
+                <Badge variant="outline" className={cn(
+                  "text-[9px] font-bold uppercase tracking-wider border-0 shadow-none shrink-0",
+                  contrastRatio >= 7 
+                    ? "bg-emerald-500/15 text-emerald-400" 
+                    : "bg-red-500/15 text-red-400"
+                )}>
+                  AAA: {contrastRatio >= 7 ? 'Pass' : 'Fail'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Color Palette Extractor */}
       <Card className="glass-panel shadow-md card-glow-cyan">
@@ -3384,6 +3714,7 @@ ${issue.better}
           {activeTab === 'spacing' && <SpacingTab scores={scores} />}
           {activeTab === 'coach' && <CoachTab />}
           {activeTab === 'automated-scan' && <AutomatedScanTab />}
+          {activeTab === 'token-linter' && <TokenLinterTab />}
         </div>
       </AnimatePresence>
 
