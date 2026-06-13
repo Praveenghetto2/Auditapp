@@ -9,8 +9,11 @@ import {
   Copy, Check, AlertTriangle, Type, Eye, Grid3X3, Brain, Palette, LayoutGrid,
   Target, Zap, MousePointerClick, BookOpen, Heart, Lightbulb, Users, Layers,
   Megaphone, CheckCircle2, XCircle, MinusCircle, Circle, Hash, Shapes,
-  Search, Home, Settings, User, Bell, Mail, Star, Trash2, Edit, Share2, Download, Loader2, UploadCloud
+  Search, Home, Settings, User, Bell, Mail, Star, Trash2, Edit, Share2, Download, Loader2, UploadCloud,
+  ExternalLink, Flame, Wand2, Send, Info
 } from 'lucide-react'
+import { ExportDialog } from '@/components/uxray/ExportDialog'
+import { HeatmapOverlay, DEFAULT_HEAT_ZONES } from '@/components/uxray/HeatmapOverlay'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +30,7 @@ import { ScoreGauge } from '@/components/uxray/ScoreGauge'
 import { IssueBadge } from '@/components/uxray/IssueBadge'
 import { useMockDataStore } from '@/lib/stores/mock-data-store'
 import { useBreadcrumbs } from '@/lib/hooks/use-breadcrumbs'
+import { useTeamStore } from '@/lib/stores/team-store'
 import { cn } from '@/lib/utils'
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -37,7 +41,7 @@ import {
 // TYPES & MOCK DATA
 // ═══════════════════════════════════════════════════════════════════════
 
-type TabId = 'overview' | 'issues' | 'copy' | 'typography' | 'accessibility' | 'spacing' | 'coach'
+type TabId = 'overview' | 'issues' | 'ai-suggestions' | 'copy' | 'typography' | 'accessibility' | 'spacing' | 'coach'
 
 interface TabDef {
   id: TabId
@@ -48,6 +52,7 @@ interface TabDef {
 const TABS: TabDef[] = [
   { id: 'overview', label: 'Overview', icon: <Sparkles className="size-3.5" /> },
   { id: 'issues', label: 'Issues', icon: <AlertTriangle className="size-3.5" /> },
+  { id: 'ai-suggestions', label: 'AI Suggestions', icon: <Wand2 className="size-3.5" /> },
   { id: 'copy', label: 'Copy Analysis', icon: <PenTool className="size-3.5" /> },
   { id: 'typography', label: 'Typography & Icons', icon: <Type className="size-3.5" /> },
   { id: 'accessibility', label: 'Accessibility', icon: <Eye className="size-3.5" /> },
@@ -1050,6 +1055,24 @@ export function ModalWrapper({ isOpen, onClose, children }) {
   }
 }
 
+function formatRelativeDate(dateString: string): string {
+  const now = Date.now()
+  const then = new Date(dateString).getTime()
+  const diffMs = now - then
+  const diffMins = Math.floor(diffMs / 60_000)
+  const diffHours = Math.floor(diffMs / 3_600_000)
+  const diffDays = Math.floor(diffMs / 86_400_000)
+
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 /** Tab 2: Issues */
 function IssuesTab({ isFixed }: { isFixed?: boolean }) {
   if (isFixed) {
@@ -1063,9 +1086,43 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
       </div>
     )
   }
+  const params = useParams()
+  const auditId = params.id as string
+
+  const teamStore = useTeamStore()
+  const [commentText, setCommentText] = React.useState('')
+  const [heatmapEnabled, setHeatmapEnabled] = React.useState(false)
+
   const [viewMode, setViewMode] = React.useState<'list' | 'visual'>('visual')
   const [inspectorMode, setInspectorMode] = React.useState<'audited' | 'fixed'>('audited')
   const [selectedIssueId, setSelectedIssueId] = React.useState<string>('iss-1')
+
+  const assignment = teamStore.getAssignment(auditId, selectedIssueId)
+  const assignee = assignment ? teamStore.members.find(m => m.id === assignment.assigneeId) : null
+  const comments = teamStore.getCommentsByIssue(auditId, selectedIssueId)
+
+  const handleAssign = (assigneeId: string) => {
+    if (assigneeId) {
+      teamStore.assignIssue({ auditId, issueId: selectedIssueId, assigneeId })
+      toast.success(`Issue assigned to ${teamStore.members.find(m => m.id === assigneeId)?.name}`)
+    } else {
+      teamStore.assignIssue({ auditId, issueId: selectedIssueId, assigneeId: '' })
+      toast.success("Issue unassigned")
+    }
+  }
+
+  const handleAddComment = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!commentText.trim()) return
+    teamStore.addComment({
+      auditId,
+      issueId: selectedIssueId,
+      authorId: 'member-1',
+      text: commentText
+    })
+    setCommentText('')
+    toast.success("Comment added!")
+  }
 
   const groupBySeverity = (severity: AuditIssue['severity']) => MOCK_ISSUES.filter((i) => i.severity === severity)
   
@@ -1161,32 +1218,51 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
                   </CardDescription>
                 </div>
 
-                {/* Audited UI vs Proposed Solution Toggle */}
-                <div className="flex rounded-xl p-1 bg-card/60 border border-border/40 glass-panel text-xs font-semibold text-muted-foreground select-none max-w-[220px]">
-                  <button
-                    type="button"
-                    onClick={() => setInspectorMode('audited')}
-                    className={cn(
-                      'py-1 px-3 rounded-lg flex items-center justify-center gap-1 transition-all duration-300 cursor-pointer',
-                      inspectorMode === 'audited'
-                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                        : 'hover:text-foreground'
-                    )}
-                  >
-                    Audited UI
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setInspectorMode('fixed')}
-                    className={cn(
-                      'py-1 px-3 rounded-lg flex items-center justify-center gap-1 transition-all duration-300 cursor-pointer',
-                      inspectorMode === 'fixed'
-                        ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                        : 'hover:text-foreground'
-                    )}
-                  >
-                    Fixed UI
-                  </button>
+                <div className="flex items-center gap-3">
+                  {/* Heatmap Toggle */}
+                  {inspectorMode === 'audited' && (
+                    <button
+                      type="button"
+                      onClick={() => setHeatmapEnabled(!heatmapEnabled)}
+                      className={cn(
+                        'h-8 px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer',
+                        heatmapEnabled
+                          ? 'bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                          : 'border-border/40 hover:bg-muted/30 text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Flame className="size-3.5" />
+                      Heatmap
+                    </button>
+                  )}
+
+                  {/* Audited UI vs Proposed Solution Toggle */}
+                  <div className="flex rounded-xl p-1 bg-card/60 border border-border/40 glass-panel text-xs font-semibold text-muted-foreground select-none max-w-[220px]">
+                    <button
+                      type="button"
+                      onClick={() => setInspectorMode('audited')}
+                      className={cn(
+                        'py-1 px-3 rounded-lg flex items-center justify-center gap-1 transition-all duration-300 cursor-pointer',
+                        inspectorMode === 'audited'
+                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                          : 'hover:text-foreground'
+                      )}
+                    >
+                      Audited UI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInspectorMode('fixed')}
+                      className={cn(
+                        'py-1 px-3 rounded-lg flex items-center justify-center gap-1 transition-all duration-300 cursor-pointer',
+                        inspectorMode === 'fixed'
+                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                          : 'hover:text-foreground'
+                      )}
+                    >
+                      Fixed UI
+                    </button>
+                  </div>
                 </div>
               </CardHeader>
               
@@ -1199,8 +1275,26 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
                     className="w-full h-full object-contain pointer-events-none select-none"
                   />
 
+                  {/* Heatmap Overlay */}
+                  <HeatmapOverlay
+                    enabled={heatmapEnabled && inspectorMode === 'audited'}
+                    zones={MOCK_ISSUES.map(issue => {
+                      const coords = ISSUE_COORDINATES[issue.id] || { x: 50, y: 50 }
+                      const intensityMap = { critical: 1, serious: 0.7, minor: 0.4 }
+                      return {
+                        x: coords.x,
+                        y: coords.y,
+                        intensity: intensityMap[issue.severity],
+                        severity: issue.severity,
+                        issueId: issue.id,
+                        label: issue.title
+                      }
+                    })}
+                    onZoneClick={(issueId) => setSelectedIssueId(issueId)}
+                  />
+
                   {/* Hotspots Overlay */}
-                  {MOCK_ISSUES.map((issue, index) => {
+                  {!heatmapEnabled && MOCK_ISSUES.map((issue, index) => {
                     const coords = ISSUE_COORDINATES[issue.id]
                     if (!coords) return null
 
@@ -1368,6 +1462,98 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
                   <div className="text-xs text-muted-foreground leading-relaxed bg-muted/20 rounded-xl p-3.5 border border-border/30 mt-2">
                     <strong>Feedback Context:</strong> {selectedIssue.details}
                   </div>
+
+                  {/* Team Collaboration Section */}
+                  <div className="border-t border-border/20 pt-4 mt-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Users className="size-3.5" />
+                        Team Assignment & Comments
+                      </h5>
+                    </div>
+
+                    {/* Assignee Selection */}
+                    <div className="flex items-center justify-between gap-3 bg-muted/10 p-2.5 rounded-xl border border-border/20">
+                      <div className="flex items-center gap-2">
+                        {assignee ? (
+                          <div
+                            className="size-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm shadow-black/20"
+                            style={{ backgroundColor: assignee.avatarColor }}
+                          >
+                            {assignee.initials}
+                          </div>
+                        ) : (
+                          <div className="size-7 rounded-full border border-dashed border-border/60 flex items-center justify-center text-muted-foreground bg-muted/20">
+                            <User className="size-3.5" />
+                          </div>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Assignee</span>
+                          <span className="text-xs font-semibold">{assignee ? assignee.name : 'Unassigned'}</span>
+                        </div>
+                      </div>
+
+                      <select
+                        value={assignment?.assigneeId || ''}
+                        onChange={(e) => handleAssign(e.target.value)}
+                        className="h-8 border border-border/40 rounded-lg bg-card px-2 text-[11px] text-foreground outline-none focus:border-primary transition-all cursor-pointer max-w-[140px]"
+                      >
+                        <option value="">Assign issue...</option>
+                        {teamStore.members.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name} ({m.role})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Comments Thread */}
+                    <div className="space-y-3">
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block font-semibold">Comments ({comments.length})</span>
+                      
+                      {comments.length > 0 ? (
+                        <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                          {comments.map((comment) => {
+                            const author = teamStore.members.find(m => m.id === comment.authorId)
+                            return (
+                              <div key={comment.id} className="bg-card/40 p-2.5 rounded-lg border border-border/10 flex gap-2.5">
+                                <div
+                                  className="size-6.5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0 mt-0.5 shadow-sm shadow-black/20"
+                                  style={{ backgroundColor: author?.avatarColor || '#6b7280' }}
+                                >
+                                  {author?.initials || '??'}
+                                </div>
+                                <div className="space-y-1 flex-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-bold text-foreground">{author?.name || 'Unknown User'}</span>
+                                    <span className="text-[9px] text-muted-foreground font-semibold">{formatRelativeDate(comment.createdAt)}</span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground/90 leading-relaxed font-normal">{comment.text}</p>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic pl-1 font-medium">No comments yet. Start the discussion below.</p>
+                      )}
+
+                      {/* Add Comment Form */}
+                      <form onSubmit={handleAddComment} className="flex gap-2 pt-1">
+                        <input
+                          type="text"
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          placeholder="Type a comment..."
+                          className="flex-1 h-9 border border-border/40 rounded-lg bg-card px-3 text-xs text-foreground outline-none focus:border-primary transition-all"
+                        />
+                        <Button type="submit" size="sm" className="h-9 font-semibold text-xs gap-1 px-3 cursor-pointer">
+                          <Send className="size-3" />
+                          Send
+                        </Button>
+                      </form>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1437,6 +1623,157 @@ function BiasIssueCard({ item }: { item: typeof BIAS_ISSUES[0] }) {
         </div>
       </div>
     </div>
+  )
+}
+
+/** Tab: AI Design Suggestions */
+function AiSuggestionsTab() {
+  const [applied, setApplied] = React.useState<Record<string, boolean>>({})
+  
+  const suggestions = [
+    {
+      id: 'sug-1',
+      title: 'Alt Text & Accessible Label Auto-Fix',
+      description: 'Inject descriptive alt tags to 4 decorative images and 1 hero banner. Add aria-label to the header search input.',
+      category: 'Accessibility',
+      impact: '+12 Score',
+      confidence: '96% confidence',
+      codeBefore: `<img src="/assets/hero-banner.jpg" />\n<input type="search" placeholder="Search..." />`,
+      codeAfter: `<img src="/assets/hero-banner.jpg" alt="UXRay platform dashboard preview highlighting audit metrics" />\n<input type="search" placeholder="Search..." aria-label="Search site audits and projects" />`,
+      details: 'Resolves WCAG 2.2 SC 1.1.1 (Non-text Content) and SC 4.1.2 (Name, Role, Value).'
+    },
+    {
+      id: 'sug-2',
+      title: 'Contrast Ratio Contrast Booster',
+      description: 'Shift text colors on the primary call-to-action button and secondary navigation items to hit WCAG 4.5:1 AA standards.',
+      category: 'Visual Hierarchy',
+      impact: '+15 Score',
+      confidence: '98% confidence',
+      codeBefore: `/* Primary CTA Button */\nbackground-color: #8B5CF6;\ncolor: #C084FC; /* Contrast is 2.8:1 */`,
+      codeAfter: `/* Primary CTA Button */\nbackground-color: #8B5CF6;\ncolor: #FFFFFF; /* Contrast is 5.4:1 */`,
+      details: 'Fixes insufficient color contrast on page navigation links and main dashboard controls.'
+    },
+    {
+      id: 'sug-3',
+      title: 'Grid Alignment & Spacing Standardization',
+      description: 'Adjust grid gaps and card paddings to enforce a strict 8px layout grid, resolving inconsistent spacing warnings.',
+      category: 'Layout Consistency',
+      impact: '+8 Score',
+      confidence: '91% confidence',
+      codeBefore: `/* Dashboard widget grid */\ngap: 19px;\npadding: 13px 17px 9px 21px;`,
+      codeAfter: `/* Standardized 8px-based grid */\ngap: 24px;\npadding: 16px; /* 4 units of 4px */`,
+      details: 'Standardizes layout alignment to improve scannability and professional polish.'
+    }
+  ]
+
+  const handleApply = (id: string) => {
+    setApplied(prev => ({ ...prev, [id]: !prev[id] }))
+    toast.success(applied[id] ? "Fix rolled back" : "AI recommendation applied and layout compiled!")
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl glass-panel border border-border/40">
+        <div>
+          <h3 className="text-base font-bold flex items-center gap-2 text-foreground">
+            <Wand2 className="size-4 text-uxray-secondary-300" />
+            AI Design Suggestions
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Auto-generated code refactoring recommendations to resolve identified UX violations
+          </p>
+        </div>
+        <Badge className="bg-primary/15 text-primary border-primary/20 shrink-0 uppercase tracking-wider font-bold text-xs py-1 px-2.5">
+          Copilot Enabled
+        </Badge>
+      </div>
+
+      <div className="grid gap-6">
+        {suggestions.map((sug) => {
+          const isApplied = applied[sug.id]
+          return (
+            <Card key={sug.id} className={cn(
+              "glass-panel shadow-md border overflow-hidden transition-all duration-300",
+              isApplied ? 'border-emerald-500/20 bg-emerald-500/5 card-glow-success' : 'border-border/40'
+            )}>
+              <div className="p-5 flex flex-col md:flex-row gap-5">
+                <div className="flex-1 space-y-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="bg-secondary/15 text-secondary-300 border-secondary/20 font-bold uppercase tracking-wider text-[10px]">
+                      {sug.category}
+                    </Badge>
+                    <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 font-bold uppercase tracking-wider text-[10px]">
+                      {sug.impact}
+                    </Badge>
+                    <Badge className="bg-primary/10 text-primary-300 border-primary/25 font-bold text-[10px]">
+                      {sug.confidence}
+                    </Badge>
+                  </div>
+
+                  <div>
+                    <h4 className="text-base font-bold text-foreground">{sug.title}</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{sug.description}</p>
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground italic flex items-center gap-1.5 font-semibold">
+                    <Info className="size-3.5" />
+                    {sug.details}
+                  </p>
+                </div>
+
+                <div className="flex-1 flex flex-col gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="rounded-xl border border-red-500/15 bg-red-500/5 p-3">
+                      <span className="text-[10px] uppercase font-bold text-red-400 tracking-wider block mb-1">Before Fix</span>
+                      <pre className="text-[10px] font-mono text-foreground/80 break-all leading-normal bg-black/20 p-2 rounded max-h-24 overflow-y-auto">
+                        <code>{sug.codeBefore}</code>
+                      </pre>
+                    </div>
+                    <div className={cn(
+                      "rounded-xl border p-3 transition-all",
+                      isApplied ? "border-emerald-500/30 bg-emerald-500/10" : "border-emerald-500/15 bg-emerald-500/5"
+                    )}>
+                      <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-1">After Fix</span>
+                      <pre className="text-[10px] font-mono text-foreground/80 break-all leading-normal bg-black/20 p-2 rounded max-h-24 overflow-y-auto">
+                        <code>{sug.codeAfter}</code>
+                      </pre>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(sug.codeAfter)
+                        toast.success("Corrected code fix copied to clipboard!")
+                      }}
+                      className="h-9 text-xs font-semibold gap-1 cursor-pointer border-border/40 hover:bg-muted/30"
+                    >
+                      <Copy className="size-3.5" />
+                      Copy Code
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleApply(sug.id)}
+                      className={cn(
+                        "h-9 text-xs font-semibold gap-1.5 cursor-pointer shadow-md transition-all",
+                        isApplied 
+                          ? "bg-emerald-500 text-white hover:bg-emerald-600" 
+                          : "bg-primary text-primary-foreground hover:opacity-90"
+                      )}
+                    >
+                      {isApplied ? <CheckCircle2 className="size-3.5" /> : <Sparkles className="size-3.5" />}
+                      {isApplied ? 'Applied' : 'Apply Suggestion'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+    </motion.div>
   )
 }
 
@@ -2456,6 +2793,7 @@ export default function AuditReportPage() {
   const [mounted, setMounted] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState<TabId>('overview')
   const [isExportingPDF, setIsExportingPDF] = React.useState(false)
+  const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false)
   const [isVerifyDialogOpen, setIsVerifyDialogOpen] = React.useState(false)
   const [isVerifying, setIsVerifying] = React.useState(false)
   const [isFixed, setIsFixed] = React.useState(false)
@@ -2541,8 +2879,9 @@ ${issue.better}
   }
 
   const handleShareLink = () => {
-    navigator.clipboard.writeText(window.location.href)
-    toast.success("Read-only shareable report link copied to clipboard!")
+    const shareUrl = `${window.location.origin}/share/${audit.id}`
+    navigator.clipboard.writeText(shareUrl)
+    toast.success("Read-only client sharing portal link copied to clipboard!")
   }
 
     const handleVerifyStart = () => {
@@ -2608,11 +2947,21 @@ ${issue.better}
             </Button>
           )}
           <Button
+            onClick={handleCopyMarkdown}
             variant="outline"
             className="gap-1.5 font-semibold text-xs border-border/40 hover:bg-muted/30 cursor-pointer"
           >
             <Copy className="size-3.5" />
             Copy Markdown
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExportDialogOpen(true)}
+            className="gap-1.5 font-semibold text-xs border-border/40 hover:bg-muted/30 cursor-pointer text-uxray-secondary-300 border-uxray-secondary-300/30 hover:border-uxray-secondary-300/50"
+          >
+            <ExternalLink className="size-3.5" />
+            Export Issues
           </Button>
           <Button
             variant="outline"
@@ -2672,6 +3021,7 @@ ${issue.better}
         <div key={activeTab}>
           {activeTab === 'overview' && <OverviewTab scores={scores} overallScore={overallScore} isFixed={isFixed} />}
           {activeTab === 'issues' && <IssuesTab isFixed={isFixed} />}
+          {activeTab === 'ai-suggestions' && <AiSuggestionsTab />}
           {activeTab === 'copy' && <CopyTab />}
           {activeTab === 'typography' && <TypographyTab />}
           {activeTab === 'accessibility' && <AccessibilityTab scores={scores} />}
@@ -2684,6 +3034,19 @@ ${issue.better}
         isOpen={isExportingPDF}
         onClose={() => setIsExportingPDF(false)}
         onComplete={handlePDFComplete}
+      />
+
+      <ExportDialog
+        open={isExportDialogOpen}
+        onOpenChange={setIsExportDialogOpen}
+        issues={MOCK_ISSUES.map(issue => ({
+          id: issue.id,
+          title: issue.title,
+          severity: issue.severity,
+          category: issue.category,
+          description: issue.description
+        }))}
+        projectName={project.name}
       />
 
       <style>{`

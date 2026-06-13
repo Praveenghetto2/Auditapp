@@ -13,6 +13,10 @@ import {
   Plus,
   Moon,
   Sun,
+  Users,
+  BarChart3,
+  ClipboardCheck,
+  GitCompareArrows,
 } from 'lucide-react'
 import type { NavItem } from '@/lib/types'
 
@@ -23,6 +27,9 @@ export const mainNavItems: NavItem[] = [
   { label: 'Projects', href: '/projects', icon: FolderKanban },
   { label: 'Audits', href: '/audits', icon: ScanSearch },
   { label: 'Reports', href: '/reports', icon: FileBarChart },
+  { label: 'Benchmarks', href: '/benchmarks', icon: BarChart3 },
+  { label: 'Team', href: '/team', icon: Users },
+  { label: 'Checklists', href: '/checklists', icon: ClipboardCheck },
 ]
 
 export const bottomNavItems: NavItem[] = [
@@ -41,7 +48,8 @@ export type CommandAction =
 export const commandActions: CommandAction[] = [
   { label: 'New Audit', icon: Plus, href: '/audits/new' },
   { label: 'New Project', icon: Plus, href: '/projects/new' },
+  { label: 'Compare Audits', icon: GitCompareArrows, href: '/audits/compare' },
+  { label: 'New Checklist', icon: ClipboardCheck, href: '/checklists' },
   { label: 'Toggle Dark Mode', icon: Moon, action: 'toggle-theme' },
   { label: 'Toggle Light Mode', icon: Sun, action: 'toggle-theme' },
 ]
-

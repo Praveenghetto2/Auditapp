@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Calendar, FileText, Plus, ChevronRight } from 'lucide-react'
+import { Calendar, FileText, Plus, ChevronRight, GitCompareArrows } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ScoreGauge } from '@/components/uxray/ScoreGauge'
@@ -72,12 +72,20 @@ export default function AuditsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Audits</h1>
           <p className="text-muted-foreground mt-1">Review visual crawler analyses and compliance checks.</p>
         </div>
-        <Button className="shrink-0 gap-2 font-semibold shadow-sm bg-primary hover:bg-primary/95 text-primary-foreground transition-all" asChild>
-          <Link href="/audits/new">
-            <Plus className="size-4 animate-pulse" />
-            Run New Audit
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" className="shrink-0 gap-2 font-semibold shadow-sm border-border/40 hover:bg-muted/30 transition-all" asChild>
+            <Link href="/audits/compare">
+              <GitCompareArrows className="size-4" />
+              Compare Audits
+            </Link>
+          </Button>
+          <Button className="shrink-0 gap-2 font-semibold shadow-sm bg-primary hover:bg-primary/95 text-primary-foreground transition-all" asChild>
+            <Link href="/audits/new">
+              <Plus className="size-4 animate-pulse" />
+              Run New Audit
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Audit List */}
