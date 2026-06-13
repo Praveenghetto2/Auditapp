@@ -175,13 +175,24 @@ export default function ProjectDetailsPage() {
             </p>
           )}
         </div>
-        <Button 
-          onClick={handleRunAudit}
-          className="relative z-10 shrink-0 gap-2 font-semibold liquid-glass-opaque bg-primary/90 text-primary-foreground hover:bg-primary shadow-lg shadow-primary/20 transition-all duration-300 h-11 px-5"
-        >
-          <Play className="size-4 fill-current" />
-          Run New Audit
-        </Button>
+        <div className="relative z-10 flex flex-wrap items-center gap-3">
+          <Button 
+            variant="outline"
+            asChild
+            className="h-11 px-5 gap-2 font-semibold border-border/40 bg-card/60 hover:bg-card hover:border-primary/30 transition-all duration-300 shadow-sm"
+          >
+            <Link href={`/projects/${projectId}/board`}>
+              <span className="text-base">📋</span> Kanban Board
+            </Link>
+          </Button>
+          <Button 
+            onClick={handleRunAudit}
+            className="gap-2 font-semibold liquid-glass-opaque bg-primary/90 text-primary-foreground hover:bg-primary shadow-lg shadow-primary/20 transition-all duration-300 h-11 px-5"
+          >
+            <Play className="size-4 fill-current" />
+            Run New Audit
+          </Button>
+        </div>
       </div>
 
       {/* Tabs Switcher */}

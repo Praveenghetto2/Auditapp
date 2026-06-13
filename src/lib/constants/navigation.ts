@@ -33,6 +33,7 @@ export const mainNavItems: NavItem[] = [
 ]
 
 export const bottomNavItems: NavItem[] = [
+  { label: 'Figma Integration', href: '/integrations/figma', icon: GitCompareArrows },
   { label: 'Settings', href: '/settings', icon: Settings },
   { label: 'Help & Docs', href: '/help', icon: HelpCircle },
 ]

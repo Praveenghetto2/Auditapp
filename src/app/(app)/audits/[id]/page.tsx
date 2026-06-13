@@ -10,7 +10,7 @@ import {
   Target, Zap, MousePointerClick, BookOpen, Heart, Lightbulb, Users, Layers,
   Megaphone, CheckCircle2, XCircle, MinusCircle, Circle, Hash, Shapes,
   Search, Home, Settings, User, Bell, Mail, Star, Trash2, Edit, Share2, Download, Loader2, UploadCloud,
-  ExternalLink, Flame, Wand2, Send, Info
+  ExternalLink, Flame, Wand2, Send, Info, Cpu, Activity
 } from 'lucide-react'
 import { ExportDialog } from '@/components/uxray/ExportDialog'
 import { HeatmapOverlay, DEFAULT_HEAT_ZONES } from '@/components/uxray/HeatmapOverlay'
@@ -41,7 +41,7 @@ import {
 // TYPES & MOCK DATA
 // ═══════════════════════════════════════════════════════════════════════
 
-type TabId = 'overview' | 'issues' | 'ai-suggestions' | 'copy' | 'typography' | 'accessibility' | 'spacing' | 'coach'
+type TabId = 'overview' | 'issues' | 'ai-suggestions' | 'copy' | 'typography' | 'accessibility' | 'spacing' | 'coach' | 'automated-scan'
 
 interface TabDef {
   id: TabId
@@ -58,6 +58,7 @@ const TABS: TabDef[] = [
   { id: 'accessibility', label: 'Accessibility', icon: <Eye className="size-3.5" /> },
   { id: 'spacing', label: 'Spacing & Layout', icon: <Grid3X3 className="size-3.5" /> },
   { id: 'coach', label: 'AI Coach', icon: <Brain className="size-3.5" /> },
+  { id: 'automated-scan', label: 'Automated Scan', icon: <Cpu className="size-3.5" /> },
 ]
 
 // Radar chart dimensions data
@@ -220,6 +221,31 @@ const MOCK_ISSUES: AuditIssue[] = [
     details: 'Standardize all hover transitions to a single easing curve and duration for a polished, cohesive interaction feel.',
   },
 ]
+
+// Custom Brand Voice Tonality mapping
+const BRAND_VOICE_REWRITES: Record<string, Record<string, string[]>> = {
+  'copy-1': {
+    startup: ["Explore the console 🚀", "Dive into features", "Discover the stack"],
+    empathetic: ["Empower your workspace", "Support your team", "Learn how we assist"],
+    casual: ["Check it out!", "Take a look!", "Curious? Learn more"],
+    strict: ["Read documentation", "Review specifications", "Analyze systems"],
+    custom: ["Custom Brand Guideline Rewrite 🤖", "Explore Brand Values", "Engage with Content"]
+  },
+  'copy-2': {
+    startup: ["Deploy now", "Spin up project", "Get keys"],
+    empathetic: ["Partner with us", "Begin collaboration", "Submit registration"],
+    casual: ["I'm in!", "Let's do this!", "Count me in! 🎉"],
+    strict: ["Execute transaction", "Confirm validation", "Submit payload"],
+    custom: ["Submit secure request 🔒", "Finalize action", "Process details"]
+  },
+  'copy-3': {
+    startup: ["Deprovision resources? No undo.", "Teardown database?", "Destroy container?"],
+    empathetic: ["Would you like to archiving instead?", "Delete project and connections?", "Confirm cancellation."],
+    casual: ["Whoops, hold on! Delete this?", "Sure you want to trash this?", "Ayo, delete project?"],
+    strict: ["Abort instance execution?", "Terminate project lifecycle?", "Confirm destructive action."],
+    custom: ["Confirm permanent deletion", "Irreversible action: delete?", "Acknowledge project destruction"]
+  }
+}
 
 // Copy analysis mock data
 const COPY_ISSUES = [
@@ -681,11 +707,25 @@ function CopyInlineButton({ text }: { text: string }) {
 }
 
 /** Copy rewrite card with tone tabs and 3-5 rewrites */
-function CopyRewriteCard({ item }: { item: typeof COPY_ISSUES[0] }) {
-  const [tone, setTone] = React.useState<'professional' | 'friendly' | 'bold' | 'minimal'>('professional')
-  const tones = ['professional', 'friendly', 'bold', 'minimal'] as const
+function CopyRewriteCard({ item, brandVoice }: { item: typeof COPY_ISSUES[0]; brandVoice?: string }) {
+  const [tone, setTone] = React.useState<string>('professional')
+  const baseTones = ['professional', 'friendly', 'bold', 'minimal'] as const
   const toneIcons: Record<string, string> = {
     professional: '💼', friendly: '😊', bold: '⚡', minimal: '✂️',
+    brand: '🤖'
+  }
+
+  React.useEffect(() => {
+    if (brandVoice) {
+      setTone('brand')
+    } else {
+      setTone('professional')
+    }
+  }, [brandVoice])
+
+  let options = item.rewrites[tone as keyof typeof item.rewrites] || []
+  if (tone === 'brand' && brandVoice) {
+    options = BRAND_VOICE_REWRITES[item.id]?.[brandVoice] || []
   }
 
   return (
@@ -698,13 +738,13 @@ function CopyRewriteCard({ item }: { item: typeof COPY_ISSUES[0] }) {
         </div>
 
         {/* Tone tabs */}
-        <div className="flex gap-1 p-1 bg-muted/40 rounded-lg">
-          {tones.map((t) => (
+        <div className="flex flex-wrap gap-1 p-1 bg-muted/40 rounded-lg">
+          {baseTones.map((t) => (
             <button
               key={t}
               onClick={() => setTone(t)}
               className={cn(
-                'flex-1 text-xs font-semibold py-1.5 rounded-md transition-all capitalize cursor-pointer',
+                'flex-1 text-xs font-semibold py-1.5 rounded-md transition-all capitalize cursor-pointer min-w-[70px]',
                 tone === t
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -713,6 +753,20 @@ function CopyRewriteCard({ item }: { item: typeof COPY_ISSUES[0] }) {
               {toneIcons[t]} {t}
             </button>
           ))}
+
+          {brandVoice && (
+            <button
+              onClick={() => setTone('brand')}
+              className={cn(
+                'flex-1 text-xs font-semibold py-1.5 rounded-md transition-all capitalize cursor-pointer border border-uxray-secondary-300/30 min-w-[95px]',
+                tone === 'brand'
+                  ? 'bg-gradient-to-r from-uxray-primary-300 to-uxray-secondary-300 text-white shadow-sm'
+                  : 'text-uxray-secondary-300 hover:bg-uxray-secondary-300/5'
+              )}
+            >
+              🤖 Brand Voice
+            </button>
+          )}
         </div>
 
         {/* Rewrite outputs */}
@@ -725,13 +779,15 @@ function CopyRewriteCard({ item }: { item: typeof COPY_ISSUES[0] }) {
             transition={{ duration: 0.15 }}
             className="space-y-2"
           >
-            {item.rewrites[tone].map((rewriteText, idx) => (
+            {options.map((rewriteText, idx) => (
               <div
                 key={`${tone}-${idx}`}
                 className="flex items-center justify-between gap-3 p-3 rounded-lg border border-emerald-500/15 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs uppercase font-bold text-emerald-400 tracking-wider">Option {idx + 1}</span>
+                  <span className="text-xs uppercase font-bold text-emerald-400 tracking-wider">
+                    {tone === 'brand' ? 'AI Auto-Brand Option' : 'Option'} {idx + 1}
+                  </span>
                   <p className="text-sm font-medium text-foreground mt-0.5">&ldquo;{rewriteText}&rdquo;</p>
                 </div>
                 <CopyInlineButton text={rewriteText} />
@@ -1779,8 +1835,84 @@ function AiSuggestionsTab() {
 
 /** Tab 3: Copy Analysis */
 function CopyTab() {
+  const [selectedVoice, setSelectedVoice] = React.useState<string>('')
+  const [customGuidelines, setCustomGuidelines] = React.useState<string>('')
+
+  const handleApplyVoice = (voiceId: string) => {
+    setSelectedVoice(voiceId)
+    toast.success(`Brand voice profile shifted to ${voiceId.toUpperCase()}! Copilot rewrites re-aligned.`)
+  }
+
+  const handleApplyCustom = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!customGuidelines.trim()) return
+    setSelectedVoice('custom')
+    toast.success("AI Copilot compiled custom brand guidelines! Review rewrites below.")
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      {/* Brand Voice Editor Card */}
+      <Card className="glass-panel border-border/40 card-glow-purple overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Sparkles className="size-4 text-uxray-secondary-300" />
+            AI Brand Voice Copilot Settings
+          </CardTitle>
+          <CardDescription>
+            Configure style guidelines to customize copy suggestions across all diagnostics.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Preset Buttons */}
+          <div>
+            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-2 block font-semibold">Voice Presets</span>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: 'startup', label: 'Startup Tech 🚀', desc: 'Punchy, actionable' },
+                { id: 'empathetic', label: 'Empathetic Corporate 🤝', desc: 'Helpful, reassuring' },
+                { id: 'casual', label: 'Casual Friendly 😊', desc: 'Direct, warm' },
+                { id: 'strict', label: 'Strict Professional 💼', desc: 'Formal, precise' }
+              ].map((voice) => {
+                const isActive = selectedVoice === voice.id
+                return (
+                  <button
+                    key={voice.id}
+                    onClick={() => handleApplyVoice(voice.id)}
+                    className={cn(
+                      "h-9 px-3 rounded-lg border text-xs font-semibold flex flex-col justify-center items-start text-left cursor-pointer transition-all min-w-[120px]",
+                      isActive
+                        ? "border-uxray-secondary-300/40 bg-uxray-secondary-300/10 text-uxray-secondary-300 shadow-sm"
+                        : "border-border/40 bg-card/40 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+                    )}
+                    title={voice.desc}
+                  >
+                    <span>{voice.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Custom style guidelines */}
+          <form onSubmit={handleApplyCustom} className="space-y-2 pt-2 border-t border-border/10">
+            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block font-semibold">Custom Brand Guidelines (.txt or text instructions)</span>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customGuidelines}
+                onChange={(e) => setCustomGuidelines(e.target.value)}
+                placeholder="e.g. Always speak in first-person plural, avoid technical jargon, use exclamation marks..."
+                className="flex-1 h-9 border border-border/40 rounded-lg bg-card px-3 text-xs text-foreground outline-none focus:border-primary transition-all"
+              />
+              <Button type="submit" size="sm" className="h-9 font-semibold text-xs cursor-pointer">
+                Apply Guidelines
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
       {/* Copy Rewriter Section */}
       <div>
         <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
@@ -1792,7 +1924,7 @@ function CopyTab() {
         </p>
         <div className="grid gap-4 lg:grid-cols-2">
           {COPY_ISSUES.map((item) => (
-            <CopyRewriteCard key={item.id} item={item} />
+            <CopyRewriteCard key={item.id} item={item} brandVoice={selectedVoice} />
           ))}
         </div>
       </div>
@@ -1812,6 +1944,230 @@ function CopyTab() {
           ))}
         </div>
       </div>
+    </motion.div>
+  )
+}
+
+/** Tab: Automated Web Accessibility & Performance Scanner */
+function AutomatedScanTab() {
+  const [scanState, setScanState] = React.useState<'idle' | 'scanning' | 'complete'>('idle')
+  const [scanProgress, setScanProgress] = React.useState(0)
+  const [scanLog, setScanLog] = React.useState<string[]>([])
+
+  const logs = [
+    "Initialising Axe-core engine...",
+    "Querying Document Object Model...",
+    "Analyzing semantic heading structures...",
+    "Checking image alternative text tags...",
+    "Evaluating background/foreground color contrast ratios...",
+    "Testing keyboard accessibility and focus rings...",
+    "Calculating PageSpeed performance metrics...",
+    "Validating meta tags and SEO indexing attributes...",
+    "Diagnostics compiled! Generating report cards..."
+  ]
+
+  const runDiagnostics = () => {
+    setScanState('scanning')
+    setScanProgress(0)
+    setScanLog([])
+    
+    let currentIdx = 0
+    const interval = setInterval(() => {
+      if (currentIdx < logs.length) {
+        setScanLog(prev => [...prev, logs[currentIdx]])
+        setScanProgress(Math.min(((currentIdx + 1) / logs.length) * 100, 100))
+        currentIdx++
+      } else {
+        clearInterval(interval)
+        setScanState('complete')
+        toast.success("Automated scanner compiled accessibility and performance metrics!")
+      }
+    }, 450)
+  }
+
+  const reports = [
+    { label: "Performance", score: 78, color: "text-amber-500", glow: "card-glow-warning" },
+    { label: "Accessibility", score: 92, color: "text-emerald-400", glow: "card-glow-success" },
+    { label: "Best Practices", score: 88, color: "text-emerald-400", glow: "card-glow-success" },
+    { label: "SEO", score: 85, color: "text-emerald-400", glow: "card-glow-success" }
+  ]
+
+  const violations = [
+    {
+      id: "v-1",
+      severity: "critical" as const,
+      impact: "Axe-core rule: color-contrast",
+      title: "Elements must have sufficient color contrast (WCAG SC 1.4.3)",
+      description: "Found 2 text elements with contrast ratios less than 4.5:1 on background layers. Affected selector: `button.cta-primary`.",
+      code: `<button className="text-[#C084FC] bg-[#8B5CF6]">Get Started</button>`
+    },
+    {
+      id: "v-2",
+      severity: "critical" as const,
+      impact: "Axe-core rule: image-alt",
+      title: "Images must have alternate text attributes (WCAG SC 1.1.1)",
+      description: "The primary decorative hero image lacks alt tag attributes. Affected selector: `img.hero-banner`.",
+      code: `<img src="/assets/hero-banner.jpg" className="hero-banner" />`
+    },
+    {
+      id: "v-3",
+      severity: "serious" as const,
+      impact: "Axe-core rule: button-name",
+      title: "Buttons must have discernible accessible names (WCAG SC 4.1.2)",
+      description: "Interactive button controls containing only icons must have aria-label descriptors. Affected selector: `button.search-submit`.",
+      code: `<button className="search-submit"><SearchIcon /></button>`
+    },
+    {
+      id: "v-4",
+      severity: "minor" as const,
+      impact: "Axe-core rule: heading-order",
+      title: "Heading levels should only increase by one (WCAG SC 1.3.1)",
+      description: "Layout skipped from H1 directly to H3. Ensure heading markup follows nesting order.",
+      code: `<h1>Dashboard</h1>\n<h3>Recent Projects</h3>`
+    }
+  ]
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl glass-panel border border-border/40">
+        <div>
+          <h3 className="text-base font-bold flex items-center gap-2 text-foreground">
+            <Cpu className="size-4 text-uxray-primary-300" />
+            Axe-Core & Lighthouse Diagnostics
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Run automated checks to verify DOM accessibility conformance and Core Web Vitals performance
+          </p>
+        </div>
+        {scanState !== 'scanning' && (
+          <Button
+            onClick={runDiagnostics}
+            className="bg-primary text-primary-foreground hover:opacity-90 font-semibold gap-1.5 shrink-0 h-9"
+          >
+            <Activity className="size-4 animate-pulse" />
+            {scanState === 'complete' ? 'Run Again' : 'Start Diagnostic Scan'}
+          </Button>
+        )}
+      </div>
+
+      {scanState === 'idle' && (
+        <Card className="glass-panel border-border/40 p-8 text-center flex flex-col items-center justify-center gap-4">
+          <div className="size-16 rounded-full bg-primary/10 border border-primary/20 text-primary-300 flex items-center justify-center">
+            <Cpu className="size-8" />
+          </div>
+          <div className="max-w-md space-y-1">
+            <h4 className="text-sm font-bold text-foreground">Automated Web Accessibility Scanner</h4>
+            <p className="text-xs text-muted-foreground leading-normal">
+              Execute WCAG 2.2 AA rules checks. This scanner runs Axe-core and Lighthouse engines in the browser context.
+            </p>
+          </div>
+          <Button onClick={runDiagnostics} className="font-semibold text-xs h-9">
+            Execute Scan
+          </Button>
+        </Card>
+      )}
+
+      {scanState === 'scanning' && (
+        <Card className="glass-panel border-border/40 p-6 space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <span>Running Diagnostics...</span>
+              <span>{Math.round(scanProgress)}%</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-muted/40 overflow-hidden relative border border-white/[0.03]">
+              <motion.div
+                className="h-full bg-gradient-to-r from-uxray-primary-300 to-uxray-secondary-300"
+                style={{ width: `${scanProgress}%` }}
+                transition={{ ease: "easeInOut" }}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-black/40 border border-white/[0.04] p-4 h-48 overflow-y-auto font-mono text-[10px] text-muted-foreground space-y-1.5 leading-relaxed">
+            {scanLog.map((log, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: -4 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-2"
+              >
+                <span className="text-uxray-primary-300 font-bold">▶</span>
+                <span>{log}</span>
+              </motion.div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {scanState === 'complete' && (
+        <div className="space-y-6">
+          {/* Lighthouse Score Rings */}
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+            {reports.map((report) => (
+              <Card key={report.label} className={cn("glass-panel border-border/40 shadow-md", report.glow)}>
+                <CardContent className="p-4 flex flex-col items-center justify-center gap-3">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{report.label}</span>
+                  <div className="relative size-16 flex items-center justify-center">
+                    <svg width="64" height="64" className="-rotate-90">
+                      <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+                      <motion.circle
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        fill="none"
+                        stroke={report.score >= 90 ? "var(--uxray-success-300)" : "var(--uxray-warning-300)"}
+                        strokeWidth="6"
+                        strokeDasharray={2 * Math.PI * 28}
+                        initial={{ strokeDashoffset: 2 * Math.PI * 28 }}
+                        animate={{ strokeDashoffset: 2 * Math.PI * 28 * (1 - report.score / 100) }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                      />
+                    </svg>
+                    <span className={cn("absolute text-sm font-bold", report.color)}>{report.score}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Automated Violations */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-foreground">Axe-Core Automated Findings ({violations.length})</h3>
+            <div className="grid gap-4">
+              {violations.map((v) => (
+                <Card key={v.id} className="glass-panel border-border/40 shadow-sm">
+                  <CardContent className="p-4 flex flex-col md:flex-row gap-4 justify-between">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className={cn(
+                          "text-[9px] uppercase tracking-wider font-bold",
+                          v.severity === 'critical' ? 'border-red-500/30 text-red-400 bg-red-500/10' :
+                          v.severity === 'serious' ? 'border-amber-500/30 text-amber-400 bg-amber-500/10' :
+                          'border-blue-500/30 text-blue-400 bg-blue-500/10'
+                        )}>
+                          {v.severity}
+                        </Badge>
+                        <span className="text-[10px] font-mono text-muted-foreground/80 font-semibold bg-muted/20 px-2 py-0.5 rounded border border-border/20">
+                          {v.impact}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-bold text-foreground leading-normal">{v.title}</h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed font-normal">{v.description}</p>
+                    </div>
+
+                    <div className="w-full md:w-56 shrink-0 space-y-1">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground block font-semibold">Code Context</span>
+                      <pre className="p-2 bg-black/30 border border-white/[0.04] rounded-lg text-[9px] font-mono text-white/80 overflow-x-auto leading-normal">
+                        <code>{v.code}</code>
+                      </pre>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -3027,6 +3383,7 @@ ${issue.better}
           {activeTab === 'accessibility' && <AccessibilityTab scores={scores} />}
           {activeTab === 'spacing' && <SpacingTab scores={scores} />}
           {activeTab === 'coach' && <CoachTab />}
+          {activeTab === 'automated-scan' && <AutomatedScanTab />}
         </div>
       </AnimatePresence>
 

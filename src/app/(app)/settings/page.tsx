@@ -1,8 +1,9 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Moon, Sun, Laptop, Check } from 'lucide-react'
+import { Moon, Sun, Laptop, Check, Wand2, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -241,6 +242,22 @@ export default function SettingsPage() {
                     Connect Figma
                   </Button>
                 </form>
+
+                <div className="mt-6 pt-6 border-t border-border/40 space-y-3">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <Wand2 className="size-4 text-primary" />
+                    Try Figma Plugin Companion
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Open our high-fidelity, interactive plugin preview screen. Inspect mock canvas layers, trigger automatic fixes, and watch design scores update in real-time.
+                  </p>
+                  <Button variant="outline" size="sm" className="gap-1.5 font-semibold text-xs border-white/[0.08] hover:bg-white/[0.05]" asChild>
+                    <Link href="/integrations/figma">
+                      Launch Plugin Companion
+                      <ArrowRight className="size-3.5" />
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
