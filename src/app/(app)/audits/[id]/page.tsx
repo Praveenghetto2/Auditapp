@@ -10,7 +10,7 @@ import {
   Target, Zap, MousePointerClick, BookOpen, Heart, Lightbulb, Users, Layers,
   Megaphone, CheckCircle2, XCircle, MinusCircle, Circle, Hash, Shapes,
   Search, Home, Settings, User, Bell, Mail, Star, Trash2, Edit, Share2, Download, Loader2, UploadCloud,
-  ExternalLink, Flame, Wand2, Send, Info, Cpu, Activity, Monitor, Tablet, Smartphone, Ruler, Smile
+  ExternalLink, Flame, Wand2, Send, Info, Cpu, Activity, Monitor, Tablet, Smartphone, Ruler, Smile, GitCompare, Play
 } from 'lucide-react'
 import { ExportDialog } from '@/components/uxray/ExportDialog'
 import { HeatmapOverlay, DEFAULT_HEAT_ZONES } from '@/components/uxray/HeatmapOverlay'
@@ -41,7 +41,7 @@ import {
 // TYPES & MOCK DATA
 // ═══════════════════════════════════════════════════════════════════════
 
-type TabId = 'overview' | 'issues' | 'ai-suggestions' | 'copy' | 'typography' | 'accessibility' | 'spacing' | 'coach' | 'automated-scan' | 'token-linter'
+type TabId = 'overview' | 'issues' | 'ai-suggestions' | 'copy' | 'typography' | 'accessibility' | 'spacing' | 'coach' | 'automated-scan' | 'token-linter' | 'ab-testing'
 
 interface TabDef {
   id: TabId
@@ -60,6 +60,7 @@ const TABS: TabDef[] = [
   { id: 'coach', label: 'AI Coach', icon: <Brain className="size-3.5" /> },
   { id: 'automated-scan', label: 'Automated Scan', icon: <Cpu className="size-3.5" /> },
   { id: 'token-linter', label: 'Token Linter', icon: <Ruler className="size-3.5" /> },
+  { id: 'ab-testing', label: 'A/B Testing', icon: <GitCompare className="size-3.5" /> },
 ]
 
 // Radar chart dimensions data
@@ -2461,6 +2462,269 @@ function TokenLinterTab() {
   )
 }
 
+/** Tab: A/B Testing Simulator & Conversion Dashboard */
+function AbTestingTab() {
+  const [simulating, setSimulating] = React.useState(false)
+  const [trafficSplit, setTrafficSplit] = React.useState(50)
+  const [visitors, setVisitors] = React.useState(12450)
+  const [conversionsA, setConversionsA] = React.useState(298)
+  const [conversionsB, setConversionsB] = React.useState(635)
+  const [clickmapView, setClickmapView] = React.useState<'a' | 'b'>('a')
+
+  React.useEffect(() => {
+    if (!simulating) return
+    const interval = setInterval(() => {
+      setVisitors((prev) => prev + Math.floor(Math.random() * 5) + 2)
+      
+      // Variant A has ~2.4% conversion rate
+      if (Math.random() < 0.024) {
+        setConversionsA((prev) => prev + 1)
+      }
+      // Variant B has ~5.1% conversion rate
+      if (Math.random() < 0.051) {
+        setConversionsB((prev) => prev + 1)
+      }
+    }, 800)
+    return () => clearInterval(interval)
+  }, [simulating])
+
+  const convRateA = visitors > 0 ? (conversionsA / (visitors * (trafficSplit / 100))).toFixed(2) : '0.00'
+  const convRateB = visitors > 0 ? (conversionsB / (visitors * ((100 - trafficSplit) / 100))).toFixed(2) : '0.00'
+  const uplift = convRateA !== '0.00' ? (((parseFloat(convRateB) - parseFloat(convRateA)) / parseFloat(convRateA)) * 100).toFixed(0) : '0'
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      {/* Header controls card */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl glass-panel border border-border/40">
+        <div>
+          <h3 className="text-base font-bold flex items-center gap-2 text-foreground">
+            <GitCompare className="size-4 text-uxray-secondary-300" />
+            Conversion Rate A/B Testing Simulator
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Compare user interaction conversions between the original Audited UI (A) and Fixed proposed design (B).
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <Button
+            size="sm"
+            onClick={() => setSimulating(!simulating)}
+            className={cn(
+              "font-bold text-xs shadow-md cursor-pointer h-9 px-4 gap-1.5 transition-all",
+              simulating ? "bg-red-500 hover:bg-red-600 text-white" : "bg-primary text-primary-foreground hover:bg-primary/95"
+            )}
+          >
+            {simulating ? '⏹ Stop Simulation' : '▶ Start Experiment'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setVisitors(12450)
+              setConversionsA(298)
+              setConversionsB(635)
+              setSimulating(false)
+            }}
+            className="h-9 text-xs border-white/[0.08] hover:bg-white/[0.05] cursor-pointer"
+          >
+            Reset Stats
+          </Button>
+        </div>
+      </div>
+
+      {/* Funnel Metrics Grid */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Variant A Summary */}
+        <Card className="glass-panel border-border/40 shadow-md card-glow-danger overflow-hidden">
+          <CardContent className="p-5 flex flex-col justify-between h-full min-h-36">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-red-400 uppercase tracking-widest">Variant A (Audited)</span>
+                <span className="text-[10px] text-muted-foreground font-mono">Weight: {trafficSplit}%</span>
+              </div>
+              <h4 className="text-2xl font-black text-foreground mt-1">{convRateA}% <span className="text-xs text-muted-foreground font-semibold">Conv. Rate</span></h4>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-3 border-t border-border/15 mt-4">
+              <span>Clicks: <strong>{conversionsA}</strong></span>
+              <span>Bounce Rate: <strong>68%</strong></span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Variant B Summary */}
+        <Card className="glass-panel border-border/40 shadow-md card-glow-success overflow-hidden">
+          <CardContent className="p-5 flex flex-col justify-between h-full min-h-36">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Variant B (Fixed)</span>
+                <span className="text-[10px] text-muted-foreground font-mono">Weight: {100 - trafficSplit}%</span>
+              </div>
+              <h4 className="text-2xl font-black text-foreground mt-1">{convRateB}% <span className="text-xs text-muted-foreground font-semibold">Conv. Rate</span></h4>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-3 border-t border-border/15 mt-4">
+              <span>Clicks: <strong>{conversionsB}</strong></span>
+              <span>Bounce Rate: <strong>32%</strong></span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Uplift Summary */}
+        <Card className="glass-panel border-border/40 shadow-md card-glow-purple overflow-hidden">
+          <CardContent className="p-5 flex flex-col justify-between h-full min-h-36 bg-gradient-to-br from-primary/5 to-transparent">
+            <div>
+              <span className="text-xs font-bold text-primary uppercase tracking-widest block mb-2">Experiment Status</span>
+              <div className="flex items-baseline gap-1.5 mt-1">
+                <span className="text-3xl font-black text-emerald-400">+{uplift}%</span>
+                <span className="text-xs font-semibold text-muted-foreground">Conversion Uplift</span>
+              </div>
+            </div>
+            <div className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 rounded-lg w-fit mt-4">
+              ✓ Statistically Significant Winner (99.9% confidence)
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Traffic Control & Clickmap Simulation */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Traffic controls */}
+        <Card className="glass-panel border-border/40 shadow-md h-full flex flex-col justify-between">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Activity className="size-4 animate-none" /> Experiment Controls
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 pb-5 flex-1 flex flex-col justify-between">
+            <div className="space-y-2 bg-muted/10 p-3 rounded-lg border border-border/20">
+              <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                <span>Traffic Split Ratio (A/B)</span>
+                <span>{trafficSplit}% / {100 - trafficSplit}%</span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="90"
+                value={trafficSplit}
+                onChange={(e) => setTrafficSplit(Number(e.target.value))}
+                className="w-full h-1 bg-white/20 rounded-full appearance-none accent-primary cursor-pointer mt-1.5"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">Simulation Status Metrics</span>
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-center">
+                <div className="p-2 bg-black/20 rounded border border-white/[0.04]">
+                  <span className="text-[8px] text-muted-foreground block uppercase">Visitors</span>
+                  {visitors.toLocaleString()}
+                </div>
+                <div className="p-2 bg-black/20 rounded border border-white/[0.04]">
+                  <span className="text-[8px] text-muted-foreground block uppercase">Conversions</span>
+                  {conversionsA + conversionsB}
+                </div>
+              </div>
+            </div>
+
+            <div className="text-[10px] text-muted-foreground leading-relaxed pt-2 border-t border-border/15">
+              Live experiment simulates real-time user click events over design elements. Adjust traffic split weight ratio above.
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Side-by-side Clickmap Visualizer */}
+        <Card className="md:col-span-2 glass-panel border-border/40 shadow-md overflow-hidden">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                <MousePointerClick className="size-4 text-primary" />
+                Live User Click-Map
+              </CardTitle>
+              <CardDescription>
+                Visual click patterns mapped directly over mock elements.
+              </CardDescription>
+            </div>
+            <div className="flex rounded-lg p-0.5 bg-card/60 border border-border/40 glass-panel text-[10px] font-semibold text-muted-foreground select-none shrink-0">
+              <button
+                onClick={() => setClickmapView('a')}
+                className={cn("px-2.5 py-1 rounded-md cursor-pointer transition-all", clickmapView === 'a' ? "bg-primary text-primary-foreground font-bold" : "hover:text-foreground")}
+              >
+                Variant A
+              </button>
+              <button
+                onClick={() => setClickmapView('b')}
+                className={cn("px-2.5 py-1 rounded-md cursor-pointer transition-all", clickmapView === 'b' ? "bg-primary text-primary-foreground font-bold" : "hover:text-foreground")}
+              >
+                Variant B
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 flex items-center justify-center">
+            {/* Clickmap Canvas Visual Preview container */}
+            <div className="relative w-full h-44 bg-[#0a0a0f] rounded-xl border border-white/[0.04] overflow-hidden flex items-center justify-center">
+              <div className="absolute inset-0 bg-[radial-gradient(#ffffff04_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none animate-none" />
+              
+              {/* Site Mockup Layout */}
+              <div className="absolute inset-x-8 top-4 bottom-4 bg-[#0d0d15] border border-white/[0.03] rounded-lg p-3 flex flex-col justify-between">
+                <div className="flex justify-between items-center border-b border-white/[0.04] pb-1.5">
+                  <div className="h-2 w-12 bg-white/10 rounded animate-none" />
+                  <div className="size-3.5 rounded-full bg-white/10" />
+                </div>
+                <div className="flex flex-col items-center gap-2 my-auto">
+                  <div className="h-2.5 w-24 bg-white/5 rounded animate-none" />
+                  {clickmapView === 'a' ? (
+                    <button type="button" className="h-5 px-3 rounded text-[8px] bg-[#B870FF]/25 border border-[#B870FF]/20 text-[#DDA0FF] cursor-default font-bold transition-all">
+                      Get Started (Low Contrast)
+                    </button>
+                  ) : (
+                    <button type="button" className="h-5 px-3 rounded text-[8px] bg-primary text-primary-foreground border border-primary/25 cursor-default font-bold transition-all">
+                      Get Started (High Contrast)
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Click Patterns (Simulated via SVG heat dots) */}
+              <svg className="absolute inset-0 size-full pointer-events-none" style={{ zIndex: 10 }}>
+                {clickmapView === 'a' ? (
+                  <g>
+                    {/* Disoriented clicks scattered around */}
+                    <circle cx="20%" cy="30%" r="3" fill="#ef4444" opacity="0.6" />
+                    <circle cx="25%" cy="35%" r="4" fill="#ef4444" opacity="0.7" />
+                    <circle cx="22%" cy="28%" r="2" fill="#ef4444" opacity="0.5" />
+                    <circle cx="80%" cy="25%" r="3" fill="#ef4444" opacity="0.6" />
+                    <circle cx="82%" cy="29%" r="4" fill="#ef4444" opacity="0.7" />
+                    {/* A few on the button but sparse */}
+                    <circle cx="50%" cy="58%" r="6" fill="#f59e0b" opacity="0.7" />
+                    <circle cx="48%" cy="55%" r="4" fill="#ef4444" opacity="0.6" />
+                    <circle cx="52%" cy="60%" r="3" fill="#ef4444" opacity="0.5" />
+                  </g>
+                ) : (
+                  <g>
+                    {/* Clicks highly concentrated on CTA button */}
+                    <circle cx="50%" cy="58%" r="14" fill="#10b981" opacity="0.3" />
+                    <circle cx="50%" cy="58%" r="10" fill="#10b981" opacity="0.5" />
+                    <circle cx="51%" cy="57%" r="8" fill="#10b981" opacity="0.7" />
+                    <circle cx="49%" cy="59%" r="6" fill="#10b981" opacity="0.8" />
+                    <circle cx="50%" cy="58%" r="4" fill="#10b981" opacity="0.9" />
+                    
+                    <circle cx="48%" cy="56%" r="5" fill="#10b981" opacity="0.7" />
+                    <circle cx="52%" cy="60%" r="5" fill="#10b981" opacity="0.7" />
+                    <circle cx="47%" cy="59%" r="3" fill="#10b981" opacity="0.8" />
+                    <circle cx="53%" cy="56%" r="3" fill="#10b981" opacity="0.8" />
+                  </g>
+                )}
+              </svg>
+              
+              <div className="absolute top-2 left-2 text-[9px] uppercase font-bold text-muted-foreground/60 tracking-wider">
+                {clickmapView === 'a' ? 'Variant A (Scattered click hotspots)' : 'Variant B (Focused click clusters)'}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </motion.div>
+  )
+}
+
 /** Tab 4: Typography & Icons */
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string; fill?: string }>> = {
   Search,
@@ -3956,6 +4220,7 @@ ${issue.better}
           {activeTab === 'coach' && <CoachTab />}
           {activeTab === 'automated-scan' && <AutomatedScanTab />}
           {activeTab === 'token-linter' && <TokenLinterTab />}
+          {activeTab === 'ab-testing' && <AbTestingTab />}
         </div>
       </AnimatePresence>
 
