@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Sidebar } from '@/components/shell/Sidebar'
 import { Header } from '@/components/shell/Header'
 import { MobileDrawer } from '@/components/shell/MobileDrawer'
-
 import { useAuthStore } from '@/lib/stores/auth-store'
+import { useThemeStore } from '@/lib/stores/theme-store'
+import { cn } from '@/lib/utils'
 
 // ═══════════════════════════════════════════════════════════════════════
 // App Layout — Authenticated shell (sidebar + header + main)
@@ -20,6 +21,7 @@ const fluidSpring = { type: 'spring' as const, stiffness: 300, damping: 30 }
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const theme = useThemeStore((s) => s.theme)
   const [collapsed, setCollapsed] = React.useState(false)
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
@@ -65,7 +67,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className={cn("relative min-h-screen bg-background", {
+      'theme-cyberpunk': theme === 'cyberpunk',
+      'theme-emerald': theme === 'emerald',
+      'theme-amber-warm': theme === 'amber-warm',
+    })}>
       {/* Sidebar (desktop only, hidden via CSS on mobile) */}
       <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
 

@@ -11,10 +11,13 @@ import { useBreadcrumbs } from '@/lib/hooks/use-breadcrumbs'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useThemeStore } from '@/lib/stores/theme-store'
 
 export default function SettingsPage() {
   useBreadcrumbs([{ label: 'Settings', href: '/settings' }])
   const { theme, setTheme } = useTheme()
+  const activeTheme = useThemeStore((s) => s.theme)
+  const setThemeState = useThemeStore((s) => s.setTheme)
 
   const [mounted, setMounted] = React.useState(false)
   const [activeSubTab, setActiveSubTab] = React.useState<'profile' | 'appearance' | 'figma'>('profile')
@@ -202,6 +205,66 @@ export default function SettingsPage() {
                         <div className="flex items-center gap-1.5 mt-1">
                           <Icon className={cn("size-3.5", isSelected ? 'text-primary' : 'text-muted-foreground')} />
                           <span className="text-xs font-bold">{t.label}</span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Accent Theme Customizer */}
+            <Card className="glass-panel border-border/40 shadow-md card-glow-purple mt-6">
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  🎨 Accent Palette & Theme
+                </CardTitle>
+                <CardDescription>
+                  Select a custom color theme accent that applies dynamically across the dashboard panels.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div role="radiogroup" aria-label="Select Accent Theme" className="grid grid-cols-2 gap-4">
+                  {[
+                    { id: 'classic-dark', label: 'Classic Purple', desc: 'Futuristic violet glows', colors: ['#8F1AFF', '#00FFAA'] },
+                    { id: 'cyberpunk', label: 'Cyberpunk Neon', desc: 'Synthwave hot pinks & cyans', colors: ['#D946EF', '#00E5FF'] },
+                    { id: 'emerald', label: 'Emerald Matrix', desc: 'Sleek hackers green & blue', colors: ['#10B981', '#3B82F6'] },
+                    { id: 'amber-warm', label: 'Amber Warmth', desc: 'Gold and warm orange accents', colors: ['#F59E0B', '#EF4444'] }
+                  ].map((themeOpt) => {
+                    const isSelected = activeTheme === themeOpt.id
+                    return (
+                      <button
+                        key={themeOpt.id}
+                        role="radio"
+                        aria-checked={isSelected}
+                        onClick={() => {
+                          setThemeState(themeOpt.id as any)
+                          toast.success(`Accent theme updated to ${themeOpt.label}!`)
+                        }}
+                        className={cn(
+                          "flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-300 cursor-pointer select-none group relative w-full",
+                          isSelected
+                            ? 'border-primary bg-primary/10 shadow-sm'
+                            : 'bg-card/25 border-border/40 hover:border-primary/25 hover:bg-card/45'
+                        )}
+                      >
+                        {isSelected && (
+                          <span className="absolute top-2 right-2 flex items-center justify-center size-4 rounded-full bg-primary text-primary-foreground z-10 animate-in zoom-in duration-200">
+                            <Check className="size-2.5" />
+                          </span>
+                        )}
+                        <div className="flex flex-col gap-1.5 flex-1">
+                          <span className="text-xs font-bold">{themeOpt.label}</span>
+                          <span className="text-[10px] text-muted-foreground leading-normal">{themeOpt.desc}</span>
+                          <div className="flex gap-1.5 mt-1">
+                            {themeOpt.colors.map((c, i) => (
+                              <span
+                                key={i}
+                                className="size-3.5 rounded-full border border-white/10"
+                                style={{ backgroundColor: c }}
+                              />
+                            ))}
+                          </div>
                         </div>
                       </button>
                     )

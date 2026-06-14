@@ -1153,7 +1153,8 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
   const [viewport, setViewport] = React.useState<'desktop' | 'tablet' | 'mobile'>('desktop')
 
   const [viewMode, setViewMode] = React.useState<'list' | 'visual'>('visual')
-  const [inspectorMode, setInspectorMode] = React.useState<'audited' | 'fixed'>('audited')
+  const [inspectorMode, setInspectorMode] = React.useState<'audited' | 'fixed' | 'split'>('audited')
+  const [splitPercent, setSplitPercent] = React.useState<number>(50)
   const [selectedIssueId, setSelectedIssueId] = React.useState<string>('iss-1')
 
   const assignment = teamStore.getAssignment(auditId, selectedIssueId)
@@ -1271,20 +1272,22 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
                     Interactive Canvas Inspector
                   </CardTitle>
                   <CardDescription className="max-w-[340px]">
-                    {inspectorMode === 'audited'
+                    {inspectorMode === 'split'
+                      ? 'Drag the A/B slider horizontally to swipe between original and fixed UI.'
+                      : inspectorMode === 'audited'
                       ? 'Select a hotspot badge directly on the design preview to view its details.'
                       : 'Select the green checkmarks to inspect the visual fixes implemented.'}
                   </CardDescription>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* Audited UI vs Proposed Solution Toggle */}
-                  <div className="flex rounded-xl p-1 bg-card/60 border border-border/40 glass-panel text-xs font-semibold text-muted-foreground select-none max-w-[220px]">
+                  {/* Audited UI vs Proposed Solution vs Split View Toggle */}
+                  <div className="flex rounded-xl p-1 bg-card/60 border border-border/40 glass-panel text-[11px] font-semibold text-muted-foreground select-none">
                     <button
                       type="button"
                       onClick={() => setInspectorMode('audited')}
                       className={cn(
-                        'py-1 px-3 rounded-lg flex items-center justify-center gap-1 transition-all duration-300 cursor-pointer',
+                        'py-1 px-2.5 rounded-lg flex items-center justify-center gap-1 transition-all duration-300 cursor-pointer',
                         inspectorMode === 'audited'
                           ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
                           : 'hover:text-foreground'
@@ -1296,13 +1299,25 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
                       type="button"
                       onClick={() => setInspectorMode('fixed')}
                       className={cn(
-                        'py-1 px-3 rounded-lg flex items-center justify-center gap-1 transition-all duration-300 cursor-pointer',
+                        'py-1 px-2.5 rounded-lg flex items-center justify-center gap-1 transition-all duration-300 cursor-pointer',
                         inspectorMode === 'fixed'
                           ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
                           : 'hover:text-foreground'
                       )}
                     >
                       Fixed UI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInspectorMode('split')}
+                      className={cn(
+                        'py-1 px-2.5 rounded-lg flex items-center justify-center gap-1 transition-all duration-300 cursor-pointer',
+                        inspectorMode === 'split'
+                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                          : 'hover:text-foreground'
+                      )}
+                    >
+                      A/B Split
                     </button>
                   </div>
                 </div>
@@ -1376,95 +1391,145 @@ function IssuesTab({ isFixed }: { isFixed?: boolean }) {
                     viewport === 'mobile' ? 'max-w-[340px] aspect-[9/16]' : 'w-full'
                   )}
                 >
-                  {/* Screenshot Image (Conditional swap based on toggle state) */}
-                  <img
-                    src={inspectorMode === 'audited' ? "/screenshots/dashboard_audit_screenshot.png" : "/screenshots/dashboard_audit_solution.png"}
-                    alt={inspectorMode === 'audited' ? "Audited Dashboard UI Preview" : "Fixed Proposed Design Solution Preview"}
-                    className="w-full h-full object-contain pointer-events-none select-none"
-                  />
-
-                  {/* Heatmap Overlay */}
-                  <HeatmapOverlay
-                    enabled={(heatmapEnabled || sentimentEnabled) && inspectorMode === 'audited'}
-                    zones={sentimentEnabled ? [
-                      { x: 85.5, y: 13.5, intensity: 0.9, severity: 'critical', issueId: 's-1', label: 'Frustration: Profile Settings' },
-                      { x: 69.0, y: 13.5, intensity: 0.85, severity: 'critical', issueId: 's-2', label: 'Frustration: Accessible Input' },
-                      { x: 57.5, y: 31.0, intensity: 0.7, severity: 'serious', issueId: 's-3', label: 'Confusion: Grid Gaps' },
-                      { x: 12.5, y: 18.5, intensity: 0.6, severity: 'minor', issueId: 's-4', label: 'Cognitive Load: Navigation' }
-                    ] : MOCK_ISSUES.map(issue => {
-                      const coords = ISSUE_COORDINATES[issue.id] || { x: 50, y: 50 }
-                      const intensityMap = { critical: 1, serious: 0.7, minor: 0.4 }
-                      return {
-                        x: coords.x,
-                        y: coords.y,
-                        intensity: intensityMap[issue.severity],
-                        severity: issue.severity,
-                        issueId: issue.id,
-                        label: issue.title
-                      }
-                    })}
-                    onZoneClick={(issueId) => setSelectedIssueId(issueId)}
-                  />
-
-                  {/* Hotspots Overlay */}
-                  {!heatmapEnabled && !sentimentEnabled && MOCK_ISSUES.map((issue, index) => {
-                    const coords = ISSUE_COORDINATES[issue.id]
-                    if (!coords) return null
-
-                    const isSelected = selectedIssueId === issue.id
-                    const num = index + 1
-
-                    let colorClass = ''
-                    if (inspectorMode === 'fixed') {
-                      colorClass = 'bg-gradient-success text-gray-900 dark:text-white shadow-uxray-success-300/40'
-                    } else {
-                      colorClass =
-                        issue.severity === 'critical'
-                          ? 'bg-gradient-danger text-gray-900 dark:text-white shadow-uxray-danger-300/40'
-                          : issue.severity === 'serious'
-                          ? 'bg-gradient-warning text-gray-900 dark:text-white shadow-uxray-warning-300/40 font-bold'
-                          : 'bg-zinc-500 text-white shadow-zinc-500/40'
-                    }
-
-                    return (
-                      <button
-                        key={issue.id}
-                        onClick={() => setSelectedIssueId(issue.id)}
-                        className={cn(
-                          'absolute flex items-center justify-center size-6.5 rounded-full font-mono text-xs font-bold shadow-lg border border-white/20 select-none cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-110 z-20',
-                          colorClass,
-                          isSelected && 'scale-125 z-30 ring-4 ring-white/30 shadow-xl'
-                        )}
-                        style={{
-                          left: `${coords.x}%`,
-                          top: `${coords.y}%`,
-                        }}
+                  {inspectorMode === 'split' ? (
+                    <div className="absolute inset-0 select-none">
+                      {/* Audited (Bottom Layer) */}
+                      <img
+                        src="/screenshots/dashboard_audit_screenshot.png"
+                        alt="Audited original baseline"
+                        className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                      />
+                      
+                      {/* Fixed (Top Layer, clipped) */}
+                      <div 
+                        className="absolute inset-y-0 left-0 overflow-hidden" 
+                        style={{ width: `${splitPercent}%` }}
                       >
-                        {/* Animated ripple circle */}
-                        {!isSelected && (
-                          <motion.span
-                            animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
-                            transition={{
-                              duration: 2.2,
-                              repeat: Infinity,
-                              ease: 'easeInOut',
-                            }}
+                        <img
+                          src="/screenshots/dashboard_audit_solution.png"
+                          alt="Fixed proposed layout"
+                          className="absolute top-0 left-0 w-full h-full object-contain pointer-events-none"
+                          style={{ minWidth: '100%', width: '100%', height: '100%' }}
+                        />
+                      </div>
+                      
+                      {/* Vertical Slider divider line */}
+                      <div 
+                        className="absolute inset-y-0 w-0.5 bg-primary cursor-col-resize z-20 flex items-center justify-center shadow-lg"
+                        style={{ left: `${splitPercent}%` }}
+                      >
+                        <div className="size-6 rounded-full bg-primary border border-white/20 flex items-center justify-center text-[10px] font-bold text-white shadow-md select-none transform -translate-x-1/2">
+                          ↔
+                        </div>
+                      </div>
+
+                      {/* Range slider overlay at the bottom for easy drag control */}
+                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-48 bg-black/60 border border-white/[0.08] rounded-full px-3 py-1 flex items-center gap-2 z-30 shadow-xl">
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase">Audited</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={splitPercent}
+                          onChange={(e) => setSplitPercent(Number(e.target.value))}
+                          className="w-full h-1 bg-white/20 rounded-full appearance-none accent-primary cursor-pointer"
+                        />
+                        <span className="text-[9px] font-bold text-emerald-400 uppercase">Fixed</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Screenshot Image (Conditional swap based on toggle state) */}
+                      <img
+                        src={inspectorMode === 'audited' ? "/screenshots/dashboard_audit_screenshot.png" : "/screenshots/dashboard_audit_solution.png"}
+                        alt={inspectorMode === 'audited' ? "Audited Dashboard UI Preview" : "Fixed Proposed Design Solution Preview"}
+                        className="w-full h-full object-contain pointer-events-none select-none"
+                      />
+
+                      {/* Heatmap Overlay */}
+                      <HeatmapOverlay
+                        enabled={(heatmapEnabled || sentimentEnabled) && inspectorMode === 'audited'}
+                        zones={sentimentEnabled ? [
+                          { x: 85.5, y: 13.5, intensity: 0.9, severity: 'critical', issueId: 's-1', label: 'Frustration: Profile Settings' },
+                          { x: 69.0, y: 13.5, intensity: 0.85, severity: 'critical', issueId: 's-2', label: 'Frustration: Accessible Input' },
+                          { x: 57.5, y: 31.0, intensity: 0.7, severity: 'serious', issueId: 's-3', label: 'Confusion: Grid Gaps' },
+                          { x: 12.5, y: 18.5, intensity: 0.6, severity: 'minor', issueId: 's-4', label: 'Cognitive Load: Navigation' }
+                        ] : MOCK_ISSUES.map(issue => {
+                          const coords = ISSUE_COORDINATES[issue.id] || { x: 50, y: 50 }
+                          const intensityMap = { critical: 1, serious: 0.7, minor: 0.4 }
+                          return {
+                            x: coords.x,
+                            y: coords.y,
+                            intensity: intensityMap[issue.severity],
+                            severity: issue.severity,
+                            issueId: issue.id,
+                            label: issue.title
+                          }
+                        })}
+                        onZoneClick={(issueId) => setSelectedIssueId(issueId)}
+                      />
+
+                      {/* Hotspots Overlay */}
+                      {!heatmapEnabled && !sentimentEnabled && MOCK_ISSUES.map((issue, index) => {
+                        const coords = ISSUE_COORDINATES[issue.id]
+                        if (!coords) return null
+
+                        const isSelected = selectedIssueId === issue.id
+                        const num = index + 1
+
+                        let colorClass = ''
+                        if (inspectorMode === 'fixed') {
+                          colorClass = 'bg-gradient-success text-gray-900 dark:text-white shadow-uxray-success-300/40'
+                        } else {
+                          colorClass =
+                            issue.severity === 'critical'
+                              ? 'bg-gradient-danger text-gray-900 dark:text-white shadow-uxray-danger-300/40'
+                              : issue.severity === 'serious'
+                              ? 'bg-gradient-warning text-gray-900 dark:text-white shadow-uxray-warning-300/40 font-bold'
+                              : 'bg-zinc-500 text-white shadow-zinc-500/40'
+                        }
+
+                        return (
+                          <button
+                            key={issue.id}
+                            onClick={() => setSelectedIssueId(issue.id)}
                             className={cn(
-                              'absolute inset-0 rounded-full',
-                              inspectorMode === 'fixed'
-                                ? 'bg-uxray-success-300/30'
-                                : issue.severity === 'critical'
-                                ? 'bg-uxray-danger-300/30'
-                                : issue.severity === 'serious'
-                                ? 'bg-uxray-warning-300/30'
-                                : 'bg-zinc-500/30'
+                              'absolute flex items-center justify-center size-6.5 rounded-full font-mono text-xs font-bold shadow-lg border border-white/20 select-none cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-110 z-20',
+                              colorClass,
+                              isSelected && 'scale-125 z-30 ring-4 ring-white/30 shadow-xl'
                             )}
-                          />
-                        )}
-                        {inspectorMode === 'fixed' ? <Check className="size-3.5" /> : num}
-                      </button>
-                    )
-                  })}
+                            style={{
+                              left: `${coords.x}%`,
+                              top: `${coords.y}%`,
+                            }}
+                          >
+                            {/* Animated ripple circle */}
+                            {!isSelected && (
+                              <motion.span
+                                animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
+                                transition={{
+                                  duration: 2.2,
+                                  repeat: Infinity,
+                                  ease: 'easeInOut',
+                                }}
+                                className={cn(
+                                  'absolute inset-0 rounded-full',
+                                  inspectorMode === 'fixed'
+                                    ? 'bg-uxray-success-300/30'
+                                    : issue.severity === 'critical'
+                                    ? 'bg-uxray-danger-300/30'
+                                    : issue.severity === 'serious'
+                                    ? 'bg-uxray-warning-300/30'
+                                    : 'bg-zinc-500/30'
+                                )}
+                              />
+                            )}
+                            {inspectorMode === 'fixed' ? <Check className="size-3.5" /> : num}
+                          </button>
+                        )
+                      })}
+                    </>
+                  )}
                 </div>
 
                 {/* Gaze Focus & Sentiment Legend */}
@@ -2567,6 +2632,27 @@ function AccessibilityTab({ scores }: { scores: { accessibility: number } }) {
   const [bgBrightness, setBgBrightness] = React.useState(12)
   const contrastRatio = Math.round((Math.max(fgBrightness, bgBrightness) + 5) / (Math.min(fgBrightness, bgBrightness) + 5) * 10) / 10
 
+  const [simulating, setSimulating] = React.useState(false)
+  const [simActiveNode, setSimActiveNode] = React.useState(1)
+
+  const startSimulation = () => {
+    if (simulating) return
+    setSimulating(true)
+    setSimActiveNode(1)
+    
+    let current = 1
+    const interval = setInterval(() => {
+      current++
+      if (current > 4) {
+        clearInterval(interval)
+        setSimulating(false)
+        setSimActiveNode(1)
+      } else {
+        setSimActiveNode(current)
+      }
+    }, 1500)
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-3">
@@ -2855,6 +2941,161 @@ function AccessibilityTab({ scores }: { scores: { accessibility: number } }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Keyboard Focus Order Simulator */}
+      <Card className="glass-panel border-border/40 card-glow-cyan overflow-hidden mt-6">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Target className="size-4 text-uxray-secondary-300" />
+              Keyboard Focus Order (Tabindex) Flow Simulator
+            </CardTitle>
+            <CardDescription>
+              Visualize the sequential TAB focus path to verify logical document order and trap compliance.
+            </CardDescription>
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={startSimulation}
+            className="h-8 text-[11px] font-bold border-primary/30 hover:bg-primary/10 text-primary cursor-pointer animate-none"
+          >
+            {simulating ? 'Simulating...' : '▶ Start Sim'}
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Interactive Mockup */}
+            <div className="md:col-span-2 relative h-48 bg-[#0a0a0f] rounded-xl border border-white/[0.04] overflow-hidden flex items-center justify-center select-none shadow-inner">
+              {/* Grid backdrop */}
+              <div className="absolute inset-0 bg-[radial-gradient(#ffffff04_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+              
+              {/* Mock UI Elements */}
+              {/* Sidebar */}
+              <div className={cn(
+                "absolute left-2 top-2 bottom-2 w-16 bg-white/[0.02] border border-white/[0.04] rounded-lg p-1.5 flex flex-col gap-1 transition-all",
+                simActiveNode === 4 && "ring-2 ring-primary bg-primary/5 shadow-md shadow-primary/15"
+              )}>
+                <div className="h-2 w-8 bg-white/10 rounded animate-none" />
+                <div className="h-1.5 w-12 bg-white/5 rounded animate-none" />
+                <div className={cn("h-4 w-full rounded mt-4 border border-white/[0.04] flex items-center justify-center text-[7px] font-bold text-muted-foreground transition-colors", simActiveNode === 4 ? "bg-primary text-white" : "bg-white/[0.02]")}>
+                  Tab 4
+                </div>
+              </div>
+
+              {/* Header Search Input */}
+              <div className={cn(
+                "absolute top-2 left-20 right-2 h-7 bg-white/[0.02] border border-white/[0.04] rounded-lg px-2 flex items-center justify-between transition-all",
+                simActiveNode === 1 && "ring-2 ring-primary bg-primary/5 shadow-md shadow-primary/15"
+              )}>
+                <div className="flex items-center gap-1.5 w-1/3">
+                  <span className="text-[7px]">🔍</span>
+                  <div className="h-1.5 w-full bg-white/10 rounded animate-none" />
+                </div>
+                <div className={cn(
+                  "size-4 rounded-full flex items-center justify-center shrink-0 transition-all",
+                  simActiveNode === 2 ? "ring-2 ring-primary bg-primary/15" : "bg-white/10"
+                )}>
+                  <div className="size-2 rounded-full bg-muted-foreground/60" />
+                </div>
+              </div>
+
+              {/* Central CTA widget */}
+              <div className="flex flex-col items-center gap-2 mt-4">
+                <div className="h-3 w-32 bg-white/10 rounded animate-none" />
+                <button
+                  type="button"
+                  className={cn(
+                    "h-6 px-4 rounded-md text-[9px] font-bold transition-all border border-primary/20 cursor-default",
+                    simActiveNode === 3 
+                      ? "bg-primary text-primary-foreground ring-2 ring-primary shadow-lg shadow-primary/20 scale-105" 
+                      : "bg-white/[0.03] text-muted-foreground"
+                  )}
+                >
+                  Tab 3 (CTA)
+                </button>
+              </div>
+
+              {/* Sequence badged nodes */}
+              {[
+                { id: 1, x: 26, y: 14, label: '1: Search' },
+                { id: 2, x: 91, y: 14, label: '2: Profile' },
+                { id: 3, x: 50, y: 65, label: '3: CTA' },
+                { id: 4, x: 8, y: 39, label: '4: Nav Link' }
+              ].map((node) => {
+                const isActive = simActiveNode === node.id
+                return (
+                  <div
+                    key={node.id}
+                    className={cn(
+                      "absolute size-5 rounded-full border flex items-center justify-center text-[10px] font-bold font-mono transition-all z-10 transform -translate-x-1/2 -translate-y-1/2 shadow-md",
+                      isActive
+                        ? "bg-primary text-primary-foreground border-primary scale-125 ring-4 ring-primary/20"
+                        : "bg-background border-border/80 text-muted-foreground"
+                    )}
+                    style={{ left: `${node.x}%`, top: `${node.y}%` }}
+                    title={node.label}
+                  >
+                    {node.id}
+                  </div>
+                )
+              })}
+
+              {/* Connecting Focus Path Lines */}
+              <svg className="absolute inset-0 size-full pointer-events-none" style={{ zIndex: 0 }}>
+                {/* Search -> Profile */}
+                <line x1="26%" y1="14%" x2="91%" y2="14%" stroke="rgba(143, 26, 255, 0.4)" strokeWidth={1.5} strokeDasharray="3 3" />
+                {/* Profile -> CTA */}
+                <line x1="91%" y1="14%" x2="50%" y2="65%" stroke="rgba(143, 26, 255, 0.4)" strokeWidth={1.5} strokeDasharray="3 3" />
+                {/* CTA -> Nav Link */}
+                <line x1="50%" y1="65%" x2="8%" y2="39%" stroke="rgba(143, 26, 255, 0.4)" strokeWidth={1.5} strokeDasharray="3 3" />
+                
+                {/* Animated active path pulse */}
+                {simulating && (
+                  <motion.circle
+                    cx={
+                      simActiveNode === 1 ? '26%' :
+                      simActiveNode === 2 ? '91%' :
+                      simActiveNode === 3 ? '50%' : '8%'
+                    }
+                    cy={
+                      simActiveNode === 1 ? '14%' :
+                      simActiveNode === 2 ? '14%' :
+                      simActiveNode === 3 ? '65%' : '39%'
+                    }
+                    r={6}
+                    fill="var(--primary)"
+                    className="opacity-60"
+                    animate={{ scale: [1, 2, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                )}
+              </svg>
+            </div>
+
+            {/* Explanation / Findings */}
+            <div className="space-y-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-foreground">Interactive Focus Report</h4>
+                <div className="space-y-2 text-[11px] leading-relaxed">
+                  <div className="flex gap-2 items-start bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10 text-emerald-400">
+                    <span className="font-bold">✓</span>
+                    <p>Tab 1 to Tab 2 follows logical standard header structure (Search input before user profile panel).</p>
+                  </div>
+                  <div className="flex gap-2 items-start bg-red-500/5 p-2 rounded-lg border border-red-500/10 text-red-400">
+                    <span className="font-bold">✗</span>
+                    <p>Tab 3 jumps past the navigation menu to main hero. Sidebar nav is missing standard skip links (SC 2.4.1).</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-muted/10 p-3 rounded-lg border border-border/20 text-[10px] text-muted-foreground leading-normal">
+                <strong>WCAG Guidelines Compliance</strong>: Interactive component sequential tab focus must be logical, predictive, and not get trapped inside modals (SC 2.4.3 Focus Order).
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   )
 }

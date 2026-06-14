@@ -630,3 +630,34 @@
     background-image: linear-gradient(135deg, color-mix(in srgb, var(--uxray-danger-300) 60%, transparent) 0%, color-mix(in srgb, var(--uxray-danger-300) 20%, transparent) 100%);
   }
 }
+
+/* ── Accent Color Themes ────────────────────────────────────────────── */
+.theme-cyberpunk {
+  --primary: #D946EF !important; /* neon magenta */
+  --ring: #D946EF !important;
+  --accent-foreground: #D946EF !important;
+  --uxray-primary-300: #D946EF !important;
+  --uxray-primary-400: #A21CAF !important;
+  --sidebar-primary: #D946EF !important;
+  --chart-1: #D946EF !important;
+}
+
+.theme-emerald {
+  --primary: #10B981 !important; /* neon emerald */
+  --ring: #10B981 !important;
+  --accent-foreground: #10B981 !important;
+  --uxray-primary-300: #10B981 !important;
+  --uxray-primary-400: #047857 !important;
+  --sidebar-primary: #10B981 !important;
+  --chart-1: #10B981 !important;
+}
+
+.theme-amber-warm {
+  --primary: #F59E0B !important; /* warm amber */
+  --ring: #F59E0B !important;
+  --accent-foreground: #F59E0B !important;
+  --uxray-primary-300: #F59E0B !important;
+  --uxray-primary-400: #B45309 !important;
+  --sidebar-primary: #F59E0B !important;
+  --chart-1: #F59E0B !important;
+}
